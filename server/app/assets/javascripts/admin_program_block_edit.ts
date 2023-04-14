@@ -1,0 +1,50 @@
+import {addEventListenerToElements} from './util'
+import {init as mainInit} from './main'
+import {init as questionBankInit} from './questionBank'
+
+class AdminProgramBlockEdit {
+  public registerEventListeners() {
+    addEventListenerToElements('form.move-block', 'submit', (event: Event) =>
+      this.handlePageUpdate(event),
+    )
+
+    addEventListenerToElements('form.move-question', 'submit', (event: Event) =>
+      this.handlePageUpdate(event),
+    )
+
+    addEventListenerToElements(
+      'form.question-option-toggle',
+      'submit',
+      (event: Event) => this.handlePageUpdate(event),
+    )
+  }
+
+  private handlePageUpdate(event: Event) {
+    event.preventDefault()
+
+    const form = event.target as HTMLFormElement
+
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+    })
+      .then((response) => response.text())
+      .then((responseText) => {
+        document.body = new DOMParser()
+          .parseFromString(responseText, 'text/html')
+          .querySelector('body') as HTMLElement
+
+        mainInit()
+        questionBankInit()
+        this.registerEventListeners()
+      })
+      .catch((err) => {
+        console.error(err)
+        alert('An error has occured, please refresh the page and try again.')
+      })
+  }
+}
+
+export function init() {
+  new AdminProgramBlockEdit().registerEventListeners()
+}

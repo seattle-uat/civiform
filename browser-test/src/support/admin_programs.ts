@@ -439,6 +439,7 @@ export class AdminPrograms {
     }
   }
 
+  /** Updates the first block of a program to have the provided description and questions. */
   async editProgramBlock(
     programName: string,
     blockDescription = 'screen description',
@@ -480,6 +481,10 @@ export class AdminPrograms {
   }
 
   async openQuestionBank() {
+    // The question bank page can be rendered client-side with event listeners attached
+    // immediately following an initial page paint. This wait is to allow time for the
+    // event listeners to bind before firing the click event.
+    await this.page.waitForTimeout(100)
     await this.page.click('button:has-text("Add a question")')
     await this.waitForQuestionBankAnimationToFinish()
   }
@@ -557,6 +562,22 @@ export class AdminPrograms {
       '#block-name-input',
       (el) => (el as HTMLInputElement).value,
     )
+  }
+
+  async moveBlockUp(blockName: string) {
+    await this.page
+      .locator('css=div.block-list-item')
+      .filter({hasText: blockName})
+      .getByTestId('move-up')
+      .click()
+  }
+
+  async moveBlockDown(blockName: string) {
+    await this.page
+      .locator('css=div.block-list-item')
+      .filter({hasText: blockName})
+      .getByTestId('move-down')
+      .click()
   }
 
   async addProgramRepeatedBlock(

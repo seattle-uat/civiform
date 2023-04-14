@@ -270,6 +270,7 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
       DivTag blockTag =
           div()
               .withClasses(
+                  "block-list-item",
                   "flex",
                   "flex-row",
                   "gap-2",
@@ -337,7 +338,10 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
                     .withMethod(HttpVerbs.POST)
                     .with(makeCsrfTokenInputTag(request))
                     .with(input().isHidden().withName("direction").withValue(Direction.UP.name()))
-                    .with(submitButton("^").withClasses(AdminStyles.MOVE_BLOCK_BUTTON)));
+                    .with(
+                        submitButton("^")
+                            .withData("testid", "move-up")
+                            .withClasses("move-block", AdminStyles.MOVE_BLOCK_BUTTON)));
 
     String moveDownFormAction =
         routes.AdminProgramBlocksController.move(programId, blockDefinition.id()).url();
@@ -355,7 +359,10 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
                     .withMethod(HttpVerbs.POST)
                     .with(makeCsrfTokenInputTag(request))
                     .with(input().isHidden().withName("direction").withValue(Direction.DOWN.name()))
-                    .with(submitButton("^").withClasses(AdminStyles.MOVE_BLOCK_BUTTON)));
+                    .with(
+                        submitButton("^")
+                            .withData("testid", "move-down")
+                            .withClasses("move-block", AdminStyles.MOVE_BLOCK_BUTTON)));
     return div().withClasses("flex", "flex-col", "self-center").with(moveUp, moveDown);
   }
 
@@ -652,7 +659,7 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
       maybeAddressCorrectionEnabledToggle.ifPresent(toggle -> ret.with(toggle));
       maybeOptionalToggle.ifPresent(ret::with);
       ret.with(
-          this.createMoveQuestionButtonsSection(
+          createMoveQuestionButtonsSection(
               csrfTag,
               programDefinition.id(),
               blockDefinition.id(),
@@ -732,7 +739,7 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
                 programDefinitionId, blockDefinitionId, questionDefinition.getId())
             .url();
     return form(csrfTag)
-        .withClasses("inline-block", "mx-1", isInvisible ? "invisible" : "")
+        .withClasses("move-question", "inline-block", "mx-1", isInvisible ? "invisible" : "")
         .withMethod(HttpVerbs.POST)
         .withAction(moveAction)
         .with(
@@ -796,6 +803,7 @@ public final class ProgramBlockEditView extends ProgramBlockBaseView {
         form(csrfTag)
             .withMethod(HttpVerbs.POST)
             .withAction(toggleOptionalAction)
+            .withClasses("question-option-toggle")
             .with(input().isHidden().withName("optional").withValue(isOptional ? "false" : "true"))
             .with(optionalButton));
   }

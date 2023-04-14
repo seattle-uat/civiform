@@ -300,7 +300,7 @@ describe('program creation', () => {
     expect(await addressCorrectionInput.inputValue()).toBe('true')
   })
 
-  it('change questions order within block', async () => {
+  it('change question order within block', async () => {
     const {page, adminQuestions, adminPrograms} = ctx
 
     await loginAsAdmin(page)
@@ -447,6 +447,24 @@ describe('program creation', () => {
     await adminPrograms.gotoEditDraftProgramPage(programName)
   })
 
+  it('change block order', async () => {
+    const {page, adminPrograms} = ctx
+
+    await loginAsAdmin(page)
+
+    const programName = 'Block reorder program'
+    await adminPrograms.addProgram(programName)
+
+    await adminPrograms.addProgramBlock(programName, 'Screen 1')
+    await adminPrograms.addProgramBlock(programName, 'Screen 2')
+    await adminPrograms.addProgramBlock(programName, 'Screen 3')
+
+    await adminPrograms.moveBlockDown('Screen 1')
+    await adminPrograms.moveBlockUp('Screen 3')
+
+    await validateScreenshot(page, 'block-reordering')
+  })
+
   it('correctly renders delete screen confirmation modal', async () => {
     const {page, adminPrograms} = ctx
 
@@ -462,10 +480,15 @@ describe('program creation', () => {
     page: Page,
     expectedQuestions: string[],
   ) {
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(100)
+
     const actualQuestions = await page
       .locator('.cf-program-question')
       .allTextContents()
+
     expect(actualQuestions.length).toEqual(expectedQuestions.length)
+
     for (let i = 0; i < actualQuestions.length; i++) {
       expect(actualQuestions[i]).toContain(expectedQuestions[i])
     }
