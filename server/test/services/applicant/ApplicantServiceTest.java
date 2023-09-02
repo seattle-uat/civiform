@@ -2022,6 +2022,97 @@ public class ApplicantServiceTest extends ResetPostgres {
   }
 
   @Test
+  public void relevantProgramsForApplicant_ShowsDraftThatIsDisabled() {
+    // This ensures that the applicant can always see that draft
+    // applications for a given program, even if a newer version of the
+    // program is disabled from the index.
+    Applicant applicant = createTestApplicant();
+
+    // Create a draft application based on the original version of a program.
+    Program originalProgramForDraftApp =
+        ProgramBuilder.newActiveProgram("program_for_draft")
+            .withBlock()
+            .withRequiredQuestion(testQuestionBank.applicantName())
+            .build();
+    applicationRepository
+        .createOrUpdateDraft(applicant.id, originalProgramForDraftApp.id)
+        .toCompletableFuture()
+        .join();
+    // create a new version of the program that is disabled
+    Program updatedProgramForDraftApp =
+        ProgramBuilder.newDraftProgram("program_for_draft")
+            .withBlock()
+            .withRequiredQuestion(testQuestionBank.applicantName())
+            .build();
+    updatedProgramForDraftApp.getProgramDefinition().toBuilder()
+        .setDisplayMode(models.DisplayMode.DISABLED)
+        .build()
+        .toProgram()
+        .update();
+    versionRepository.publishNewSynchronizedVersion();
+
+    ApplicantService.ApplicationPrograms result =
+        subject
+            .relevantProgramsForApplicant(applicant.id, trustedIntermediaryProfile)
+            .toCompletableFuture()
+            .join();
+    assertThat(result.inProgress().stream().map(p -> p.program().id()))
+        .containsExactly(originalProgramForDraftApp.id);
+    // As part of test setup, a "test program" is initialized.
+    // When calling publish, this will become active. This provides
+    // confidence that the draft version created above is actually published.
+    assertThat(result.unapplied().stream().map(p -> p.program().id()))
+        .containsExactly(programDefinition.id());
+  }
+
+  @Test
+  public void
+      relevantProgramsForApplicant_DoesNotShowsPreviouslySubmittedApplicationThatIsDisabled() {
+    // This ensures that the applicant can always see that submitted
+    // applications for a given program, even if a newer version of the
+    // program is disabled from the index.
+
+    Applicant applicant = createTestApplicant();
+
+    // Create a submitted application based on the original version of a program.
+    Program originalProgramForSubmittedApp =
+        ProgramBuilder.newActiveProgram("program_for_application")
+            .withBlock()
+            .withRequiredQuestion(testQuestionBank.applicantName())
+            .build();
+    applicationRepository
+        .submitApplication(applicant.id, originalProgramForSubmittedApp.id, Optional.empty())
+        .toCompletableFuture()
+        .join();
+
+    // Create a new program version that is disabled
+    Program updatedProgramForSubmittedApp =
+        ProgramBuilder.newDraftProgram("program_for_application")
+            .withBlock()
+            .withRequiredQuestion(testQuestionBank.applicantName())
+            .build();
+    updatedProgramForSubmittedApp.getProgramDefinition().toBuilder()
+        .setDisplayMode(DisplayMode.DISABLED)
+        .build()
+        .toProgram()
+        .update();
+    versionRepository.publishNewSynchronizedVersion();
+
+    ApplicantService.ApplicationPrograms result =
+        subject
+            .relevantProgramsForApplicant(applicant.id, trustedIntermediaryProfile)
+            .toCompletableFuture()
+            .join();
+    // Disabled Programs, though submitted is still hidden from applicants
+    assertThat(result.submitted()).isEmpty();
+    // As part of test setup, a "test program" is initialized.
+    // When calling publish, this will become active. This provides
+    // confidence that the draft version created above is actually published.
+    assertThat(result.unapplied().stream().map(p -> p.program().id()))
+        .containsExactly(programDefinition.id());
+  }
+
+  @Test
   public void relevantProgramsForApplicant_tiOnly() {
     Applicant applicant = createTestApplicant();
     Applicant ti = resourceCreator.insertApplicant();

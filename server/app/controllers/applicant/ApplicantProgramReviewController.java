@@ -103,8 +103,15 @@ public class ApplicantProgramReviewController extends CiviFormController {
         .thenApplyAsync(
             (roApplicantProgramService) -> {
               Messages messages = messagesApi.preferred(request);
+
               Optional<ToastMessage> notEligibleBanner = Optional.empty();
               try {
+                if (programService
+                    .getProgramDefinition(programId)
+                    .displayMode()
+                    .equals(models.DisplayMode.DISABLED)) {
+                  return notFound(messages.at(MessageKey.PROGRAM_DISABLED.getKeyName()));
+                }
                 if (shouldShowNotEligibleBanner(roApplicantProgramService, programId)) {
                   notEligibleBanner =
                       Optional.of(

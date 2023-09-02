@@ -12,6 +12,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import models.Account;
+import models.DisplayMode;
 import org.pac4j.play.java.Secure;
 import play.i18n.MessagesApi;
 import play.libs.concurrent.HttpExecutionContext;
@@ -78,6 +79,12 @@ public final class UpsellController extends CiviFormController {
             .thenApplyAsync(ProgramDefinition::isCommonIntakeForm)
             .toCompletableFuture();
 
+    CompletableFuture<Boolean> isProgramDisabled =
+        programService
+            .getProgramDefinitionAsync(programId)
+            .thenApplyAsync(pdef -> pdef.displayMode().equals(DisplayMode.DISABLED))
+            .toCompletableFuture();
+
     CompletableFuture<ApplicantPersonalInfo> applicantPersonalInfo =
         applicantService.getPersonalInfo(applicantId).toCompletableFuture();
 
@@ -93,12 +100,13 @@ public final class UpsellController extends CiviFormController {
             .getReadOnlyApplicantProgramService(applicantId, programId)
             .toCompletableFuture();
 
-    return CompletableFuture.allOf(isCommonIntake, account, roApplicantProgramService)
+    return CompletableFuture.allOf(
+            isCommonIntake, account, roApplicantProgramService, isProgramDisabled)
         .thenComposeAsync(
             ignored -> {
-              if (!isCommonIntake.join()) {
-                // If this isn't the common intake form, we don't need to make the
-                // call to get the applicant's eligible programs.
+              if (!isCommonIntake.join() || isProgramDisabled.join()) {
+                // If this isn't the common intake form or a disabled program, we don't need to make
+                // the call to get the applicant's eligible programs.
                 Optional<ImmutableList<ApplicantProgramData>> result = Optional.empty();
                 return CompletableFuture.completedFuture(result);
               }
