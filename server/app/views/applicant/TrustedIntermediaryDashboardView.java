@@ -1,6 +1,7 @@
 package views.applicant;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static j2html.TagCreator.button;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.each;
 import static j2html.TagCreator.form;
@@ -17,6 +18,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import controllers.ti.routes;
+import j2html.tags.ContainerTag;
 import j2html.tags.specialized.DivTag;
 import j2html.tags.specialized.FormTag;
 import j2html.tags.specialized.TdTag;
@@ -37,7 +39,9 @@ import services.DateConverter;
 import services.applicant.ApplicantPersonalInfo;
 import views.BaseHtmlView;
 import views.HtmlBundle;
+import views.ViewUtils;
 import views.admin.ti.TrustedIntermediaryGroupListView;
+import views.components.ButtonStyles;
 import views.components.FieldWithLabel;
 import views.components.Icons;
 import views.components.LinkElement;
@@ -68,6 +72,7 @@ public class TrustedIntermediaryDashboardView extends BaseHtmlView {
       Http.Request request,
       Messages messages,
       Long currentTisApplicantId) {
+    ContainerTag newClientForm = renderAddNewForm(tiGroup, request);
     HtmlBundle bundle =
         layout
             .getBundle(request)
@@ -75,11 +80,17 @@ public class TrustedIntermediaryDashboardView extends BaseHtmlView {
             .addMainContent(
                 renderHeader(tiGroup.getName(), "py-12", "mb-0", "bg-gray-50"),
                 hr(),
-                renderHeader("Add Client").withId("add-client"),
-                requiredFieldsExplanationContent(),
-                renderAddNewForm(tiGroup, request),
-                hr().withClasses("mt-6"),
-                renderHeader("Clients"),
+                div(
+                        renderHeader("Clients").withClass("mb-0"),
+                        ViewUtils.makeUSWDSModal(
+                            newClientForm,
+                            "new-client",
+                            "Add new client",
+                            "Add new client",
+                            false,
+                            "Save",
+                            "Cancel"))
+                    .withClasses("flex", "justify-between", "items-center", "mb-4"),
                 renderSearchForm(request, searchParameters),
                 renderTIApplicantsTable(
                     managedAccounts, searchParameters, page, totalPageCount, request),
@@ -175,7 +186,7 @@ public class TrustedIntermediaryDashboardView extends BaseHtmlView {
                         this::renderTIRow))));
   }
 
-  private DivTag renderAddNewForm(TrustedIntermediaryGroupModel tiGroup, Http.Request request) {
+  private FormTag renderAddNewForm(TrustedIntermediaryGroupModel tiGroup, Http.Request request) {
     FormTag formTag =
         form()
             .withMethod("POST")
@@ -221,17 +232,20 @@ public class TrustedIntermediaryDashboardView extends BaseHtmlView {
                     + " organization will be responsible for communicating updates to your"
                     + " client.")
             .setValue(request.flash().get("providedEmail").orElse(""));
-    return div()
-        .with(
-            formTag.with(
-                emailField.getEmailTag(),
-                firstNameField.getInputTag(),
-                middleNameField.getInputTag(),
-                lastNameField.getInputTag(),
-                dateOfBirthField.getDateTag(),
-                makeCsrfTokenInputTag(request),
-                submitButton("Add").withClasses("ml-2", "mb-6")))
-        .withClasses("border", "border-gray-300", "shadow-md", "w-1/2", "mt-6");
+    return formTag.with(
+        emailField.getEmailTag(),
+        firstNameField.getInputTag(),
+        middleNameField.getInputTag(),
+        lastNameField.getInputTag(),
+        dateOfBirthField.getDateTag(),
+        makeCsrfTokenInputTag(request),
+        div()
+            .withClasses("mt-10", "flex", "flex-col")
+            .with(
+                submitButton("Save").attr("data-close-modal").withClasses(ButtonStyles.SOLID_BLUE),
+                button("Cancel")
+                    .attr("data-close-modal")
+                    .withClasses("mt-2", ButtonStyles.OUTLINED_TRANSPARENT)));
   }
 
   private TrTag renderTIRow(AccountModel ti) {
