@@ -31,6 +31,8 @@ import services.program.ProgramNotFoundException;
 import services.program.ProgramService;
 import services.question.QuestionService;
 import services.question.ReadOnlyQuestionService;
+import views.ViewUtils;
+import views.admin.programs.BlockListPartial;
 import views.admin.programs.ProgramBlocksView;
 import views.components.ToastMessage;
 
@@ -43,6 +45,7 @@ public final class AdminProgramBlocksController extends CiviFormController {
   private final QuestionService questionService;
   private final FormFactory formFactory;
   private final RequestChecker requestChecker;
+  private final BlockListPartial.Factory blockListPartialFactory;
 
   @Inject
   public AdminProgramBlocksController(
@@ -52,7 +55,8 @@ public final class AdminProgramBlocksController extends CiviFormController {
       FormFactory formFactory,
       RequestChecker requestChecker,
       ProfileUtils profileUtils,
-      VersionRepository versionRepository) {
+      VersionRepository versionRepository,
+      BlockListPartial.Factory blockListPartialFactory) {
     super(profileUtils, versionRepository);
     this.programService = checkNotNull(programService);
     this.questionService = checkNotNull(questionService);
@@ -60,6 +64,7 @@ public final class AdminProgramBlocksController extends CiviFormController {
     this.readOnlyView = checkNotNull(programBlockViewFactory.create(ACTIVE));
     this.formFactory = checkNotNull(formFactory);
     this.requestChecker = checkNotNull(requestChecker);
+    this.blockListPartialFactory = checkNotNull(blockListPartialFactory);
   }
 
   /**
@@ -83,7 +88,7 @@ public final class AdminProgramBlocksController extends CiviFormController {
    */
   @Secure(authorizers = Authorizers.Labels.CIVIFORM_ADMIN)
   public Result readOnlyIndex(long programId) {
-    return index(programId, /* readOnly=*/ true);
+    return index(programId, /* readOnly= */ true);
   }
 
   /**
@@ -206,6 +211,24 @@ public final class AdminProgramBlocksController extends CiviFormController {
     return redirect(routes.AdminProgramBlocksController.edit(programId, blockId));
   }
 
+  /** GET endpoint for rendering sidebar list of blocks. */
+  @Secure(authorizers = Authorizers.Labels.CIVIFORM_ADMIN)
+  public Result hxBlockList(Request request, long programId, long blockId) {
+    DynamicForm requestData = formFactory.form().bindFromRequest(request);
+    ViewUtils.ProgramDisplayType programDisplayType =
+        ViewUtils.ProgramDisplayType.valueOf(requestData.get("programDisplayType"));
+
+    try {
+      return ok(
+          blockListPartialFactory
+              .create(programDisplayType)
+              .render(request, programService.getProgramDefinition(programId), blockId)
+              .render());
+    } catch (ProgramNotFoundException e) {
+      return notFound(e.toString());
+    }
+  }
+
   /** POST endpoint for moving a screen (block) for the program. */
   @Secure(authorizers = Authorizers.Labels.CIVIFORM_ADMIN)
   public Result move(Request request, long programId, long blockId) {
@@ -213,15 +236,20 @@ public final class AdminProgramBlocksController extends CiviFormController {
 
     DynamicForm requestData = formFactory.form().bindFromRequest(request);
     Direction direction = Direction.valueOf(requestData.get("direction"));
+
     try {
       programService.moveBlock(programId, blockId, direction);
+
+      return ok(
+          blockListPartialFactory
+              .create(DRAFT)
+              .render(request, programService.getProgramDefinition(programId), blockId)
+              .render());
     } catch (IllegalPredicateOrderingException e) {
-      return redirect(routes.AdminProgramBlocksController.edit(programId, blockId))
-          .flashing("error", e.getLocalizedMessage());
+      return badRequest(e.getLocalizedMessage());
     } catch (ProgramNotFoundException e) {
       return notFound(e.toString());
     }
-    return redirect(routes.AdminProgramBlocksController.edit(programId, blockId));
   }
 
   /** POST endpoint for deleting a screen (block) for the program. */

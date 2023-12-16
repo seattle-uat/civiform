@@ -445,6 +445,7 @@ public final class ProgramIndexView extends BaseHtmlView {
     if (draftProgram.isPresent()) {
       List<ButtonTag> draftRowActions = Lists.newArrayList();
       List<ButtonTag> draftRowExtraActions = Lists.newArrayList();
+
       if (settingsManifest.getUniversalQuestions(request)) {
         // Add the trigger button belonging to the modal that matches each draft program
         publishSingleProgramModals.stream()
@@ -457,6 +458,7 @@ public final class ProgramIndexView extends BaseHtmlView {
       } else {
         draftRowActions.add(renderPublishProgramLink(draftProgram.get(), request));
       }
+
       draftRowActions.add(renderEditLink(/* isActive= */ false, draftProgram.get(), request));
       draftRowExtraActions.add(renderManageProgramAdminsLink(draftProgram.get()));
       Optional<ButtonTag> maybeManageTranslationsLink =
