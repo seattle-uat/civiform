@@ -1,6 +1,10 @@
 package views.components;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
+import modules.ThymeleafModule;
+import org.apache.commons.lang3.StringUtils;
+import org.thymeleaf.TemplateEngine;
 import services.question.types.QuestionType;
 
 /**
@@ -515,6 +519,22 @@ public enum Icons {
         icon.viewBox.orElseGet(() -> String.format("0 0 %1$d %2$d", icon.size, icon.size));
 
     return svg().with(path(icon.path)).attr("viewBox", iconViewBox);
+  }
+
+  public static String svg(
+      TemplateEngine templateEngine,
+      ThymeleafModule.PlayThymeleafContext context,
+      Icons icon,
+      ImmutableSet<String> svgClasses) {
+    var iconViewBox =
+        icon.viewBox.orElseGet(() -> String.format("0 0 %1$d %2$d", icon.size, icon.size));
+    context.setVariable("pathValue", icon.path);
+    context.setVariable("viewBox", iconViewBox);
+    context.setVariable("svgClasses", StringUtils.join(svgClasses, " "));
+    System.out.println(
+        "An icon: "
+            + templateEngine.process("components/IconFragment", ImmutableSet.of("icon"), context));
+    return templateEngine.process("components/IconFragment", ImmutableSet.of("icon"), context);
   }
 
   private static SvgTag svg() {
