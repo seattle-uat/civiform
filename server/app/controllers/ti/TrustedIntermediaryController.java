@@ -76,11 +76,65 @@ public final class TrustedIntermediaryController {
       Optional<String> monthQuery,
       Optional<String> yearQuery,
       Optional<Integer> page) {
+
     if (page.isEmpty()) {
       return redirect(
           routes.TrustedIntermediaryController.dashboard(
               nameQuery, dayQuery, monthQuery, yearQuery, Optional.of(1)));
     }
+    Optional<CiviFormProfile> civiformProfile = profileUtils.currentUserProfile(request);
+    if (civiformProfile.isEmpty()) {
+      return unauthorized();
+    }
+    Optional<TrustedIntermediaryGroupModel> trustedIntermediaryGroup =
+        accountRepository.getTrustedIntermediaryGroup(civiformProfile.get());
+    if (trustedIntermediaryGroup.isEmpty()) {
+      return notFound();
+    }
+
+    SearchParameters searchParameters =
+        SearchParameters.builder()
+            .setNameQuery(nameQuery)
+            .setDayQuery(dayQuery)
+            .setMonthQuery(monthQuery)
+            .setYearQuery(yearQuery)
+            .build();
+    TrustedIntermediarySearchResult trustedIntermediarySearchResult =
+        tiService.getManagedAccounts(searchParameters, trustedIntermediaryGroup.get());
+    if (!trustedIntermediarySearchResult.isSuccessful()) {
+      throw new BadRequestException(trustedIntermediarySearchResult.getErrorMessage().get());
+    }
+    PaginationInfo<AccountModel> pageInfo =
+        PaginationInfo.paginate(
+            trustedIntermediarySearchResult.getAccounts().get(), PAGE_SIZE, page.get());
+
+    Optional<String> applicantName =
+        civiformProfile.get().getApplicant().join().getApplicantData().getApplicantName();
+
+    return ok(
+        tiDashboardView.render(
+            trustedIntermediaryGroup.get(),
+            ApplicantPersonalInfo.ofLoggedInUser(
+                Representation.builder().setName(applicantName).build()),
+            pageInfo.getPage(),
+            nameQuery,
+            dayQuery,
+            monthQuery,
+            yearQuery,
+            request,
+            messagesApi.preferred(request),
+            civiformProfile.get().getApplicant().toCompletableFuture().join().id));
+  }
+
+  @Secure(authorizers = Authorizers.Labels.TI)
+  public Result hxClientListTab(
+      Http.Request request,
+      Optional<String> nameQuery,
+      Optional<String> dayQuery,
+      Optional<String> monthQuery,
+      Optional<String> yearQuery,
+      Optional<Integer> page) {
+
     Optional<CiviFormProfile> civiformProfile = profileUtils.currentUserProfile(request);
     if (civiformProfile.isEmpty()) {
       return unauthorized();
@@ -106,21 +160,32 @@ public final class TrustedIntermediaryController {
         PaginationInfo.paginate(
             trustedIntermediarySearchResult.getAccounts().get(), PAGE_SIZE, page.get());
 
-    Optional<String> applicantName =
-        civiformProfile.get().getApplicant().join().getApplicantData().getApplicantName();
-
     return ok(
-        tiDashboardView.render(
-            trustedIntermediaryGroup.get(),
-            ApplicantPersonalInfo.ofLoggedInUser(
-                Representation.builder().setName(applicantName).build()),
-            pageInfo.getPageItems(),
-            pageInfo.getPageCount(),
-            pageInfo.getPage(),
-            searchParameters,
-            request,
-            messagesApi.preferred(request),
-            civiformProfile.get().getApplicant().toCompletableFuture().join().id));
+        tiDashboardView
+            .hxRenderClientListTab(
+                trustedIntermediaryGroup.get(),
+                pageInfo.getPageItems(),
+                pageInfo.getPageCount(),
+                pageInfo.getPage(),
+                searchParameters,
+                request)
+            .render());
+  }
+
+  @Secure(authorizers = Authorizers.Labels.TI)
+  public Result hxAccountsSettingsTab(Http.Request request) {
+
+    Optional<CiviFormProfile> civiformProfile = profileUtils.currentUserProfile(request);
+    if (civiformProfile.isEmpty()) {
+      return unauthorized();
+    }
+    Optional<TrustedIntermediaryGroupModel> trustedIntermediaryGroup =
+        accountRepository.getTrustedIntermediaryGroup(civiformProfile.get());
+    if (trustedIntermediaryGroup.isEmpty()) {
+      return notFound();
+    }
+
+    return ok(tiDashboardView.hxRenderAccountSettingsTab(trustedIntermediaryGroup.get()).render());
   }
 
   @Secure(authorizers = Authorizers.Labels.TI)
