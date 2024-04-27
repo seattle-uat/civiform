@@ -1,11 +1,14 @@
 package services.question.types;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.OptionalLong;
+import play.libs.Json;
 import services.LocalizedStrings;
 import services.question.PrimaryApplicantInfoTag;
 import services.question.QuestionOption;
@@ -177,18 +180,20 @@ public final class QuestionDefinitionBuilder {
   }
 
   public QuestionDefinition build() throws UnsupportedQuestionTypeException {
+    String reformattedValidationPredicatesString = createValidationPredicatesWithType();
+
     switch (this.questionType) {
       case ADDRESS:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              AddressValidationPredicates.parse(validationPredicatesString));
+              AddressValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new AddressQuestionDefinition(builder.build());
 
       case CHECKBOX:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              MultiOptionValidationPredicates.parse(validationPredicatesString));
+              MultiOptionValidationPredicates.parse(reformattedValidationPredicatesString));
         }
 
         return new MultiOptionQuestionDefinition(
@@ -211,22 +216,23 @@ public final class QuestionDefinitionBuilder {
         return new FileUploadQuestionDefinition(builder.build());
 
       case ID:
-        if (!validationPredicatesString.isEmpty()) {
-          builder.setValidationPredicates(IdValidationPredicates.parse(validationPredicatesString));
+        if (!reformattedValidationPredicatesString.isEmpty()) {
+          builder.setValidationPredicates(
+              IdValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new IdQuestionDefinition(builder.build());
 
       case NAME:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              NameValidationPredicates.parse(validationPredicatesString));
+              NameValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new NameQuestionDefinition(builder.build());
 
       case NUMBER:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              NumberValidationPredicates.parse(validationPredicatesString));
+              NumberValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new NumberQuestionDefinition(builder.build());
 
@@ -247,21 +253,42 @@ public final class QuestionDefinitionBuilder {
         return new StaticContentQuestionDefinition(builder.build());
 
       case TEXT:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              TextValidationPredicates.parse(validationPredicatesString));
+              TextValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new TextQuestionDefinition(builder.build());
 
       case PHONE:
-        if (!validationPredicatesString.isEmpty()) {
+        if (!reformattedValidationPredicatesString.isEmpty()) {
           builder.setValidationPredicates(
-              PhoneValidationPredicates.parse(validationPredicatesString));
+              PhoneValidationPredicates.parse(reformattedValidationPredicatesString));
         }
         return new PhoneQuestionDefinition(builder.build());
 
       default:
         throw new UnsupportedQuestionTypeException(this.questionType);
     }
+  }
+
+  private String createValidationPredicatesWithType() {
+    JsonNode parsed = Json.parse(validationPredicatesString);
+    if (parsed.isEmpty()) {
+      return "";
+    }
+
+    if (parsed.findPath("type").isEmpty()) {
+      String type = this.questionType.name().toLowerCase(Locale.getDefault());
+      if (this.questionType == QuestionType.CHECKBOX
+          || this.questionType == QuestionType.RADIO_BUTTON
+          || this.questionType == QuestionType.DROPDOWN) {
+        type = "multioption";
+      }
+      ObjectNode newNode = (ObjectNode) parsed;
+      newNode.put("type", type);
+      return newNode.toString();
+    }
+
+    return validationPredicatesString;
   }
 }
