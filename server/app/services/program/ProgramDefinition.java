@@ -18,6 +18,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+
+import models.CategoryModel;
 import models.DisplayMode;
 import models.ProgramModel;
 import modules.MainModule;
@@ -132,6 +135,10 @@ public abstract class ProgramDefinition {
   /** A description of the program's summary image, used for alt text. */
   @JsonProperty("localizedSummaryImageDescription")
   public abstract Optional<LocalizedStrings> localizedSummaryImageDescription();
+
+  /** The categories this program belongs to. */
+  @JsonProperty("categories")
+  public abstract List<CategoryModel> categories();
 
   /** A key used to fetch the program's summary image from cloud storage. */
   // JsonIgnored because the file key points to a file in cloud storage, and different instances
@@ -827,6 +834,9 @@ public abstract class ProgramDefinition {
     @JsonProperty("localizedSummaryImageDescription")
     public abstract Builder setLocalizedSummaryImageDescription(
         Optional<LocalizedStrings> localizedSummaryImageDescription);
+
+    @JsonProperty("categories")
+    public abstract Builder setCategories(List<CategoryModel> categories);
 
     public abstract Builder setSummaryImageFileKey(Optional<String> fileKey);
 
