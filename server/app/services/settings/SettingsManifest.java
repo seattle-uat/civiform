@@ -1033,7 +1033,7 @@ public final class SettingsManifest extends AbstractSettingsManifest {
           "Branding",
           SettingsSection.create(
               "Branding",
-              "Configuration options for CiviForm branding.",
+              "Caonfiguration options for CiviForm branding.",
               ImmutableList.of(),
               ImmutableList.of(
                   SettingDescription.create(
