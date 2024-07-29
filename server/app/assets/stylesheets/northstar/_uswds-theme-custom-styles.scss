@@ -89,15 +89,6 @@ See the radio-option below as an example.
   @include u-height(1);
 }
 
-.cf-footer-primary-link {
-  @include u-text('base-darkest');
-  @include u-font-size('body', 'sm');
-  font-style: normal;
-  font-weight: 700;
-  line-height: normal;
-  text-decoration: underline;
-}
-
 // Styles for desktop
 @media (min-width: 64em) {
   // The USWDS header doesn't give enough space for the logo and title, so we add some.
@@ -119,12 +110,6 @@ See the radio-option below as an example.
   }
 }
 
-@media (min-width: 48em) {
-  .grid-container-footer {
-    @include grid-container;
-  }
-}
-
 // Styles for mobile
 @media (max-width: 47.9em) {
   // Hide the logo on mobile
@@ -135,14 +120,6 @@ See the radio-option below as an example.
   // Use a single column on mobile
   .grid-container {
     grid-template-columns: 1fr;
-  }
-
-  // Use full screen width in mobile footer to create horizontal lines
-  .grid-container-footer {
-    @include grid-container;
-    grid-template-columns: 1fr;
-    padding-left: 0px;
-    padding-right: 0px;
   }
 }
 
@@ -172,16 +149,17 @@ h1.usa-step-indicator__heading {
   align-self: stretch;
 }
 
-.cf-return-to-top-link {
-  @include u-text('primary');
-  @include u-font-size('body', 'sm');
-  line-height: 150%; // 24px
-  text-decoration-line: underline;
+/**
+ * USWDS color utils are turned off, so we use the USWDS color manually.
+ * See #7951 for detils
+ */
+.cf-footer-help-links a {
+  @include u-text('base-darkest');
 }
 
 /**
- * On tablet and mobile, give each footer link its own row.
- * Make the border extend the full width of the screen.
+ * On tablet and mobile, give each link it's own row. Most of this logic is to make the border
+ * extend the full width of the screen.
  */
 @media (max-width: 640px) {
   .cf-footer-help-bar {
@@ -192,34 +170,15 @@ h1.usa-step-indicator__heading {
     width: 100%;
   }
 
-  .cf-footer-primary-link {
+  .cf-footer-help-links a {
     @include u-border-bottom('base', 1px);
-    border-color: color('base-light');
+    @include u-padding-x(6);
     width: 100%;
   }
 
   .cf-footer-technical-suppport {
-    @include u-text('base-darkest');
-    @include u-font-size('body', 'sm');
-    text-align: left;
+    @include u-padding-x(6);
   }
-}
-
-/* Desktop and tablet */
-@media (min-width: 641px) {
-  .cf-footer-help-bar .grid-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .cf-footer-technical-suppport {
-    text-align: right;
-  }
-}
-
-.expanding-div {
-  flex-grow: 1;
 }
 
 .cf-block-form {
