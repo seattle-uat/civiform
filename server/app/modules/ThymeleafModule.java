@@ -8,6 +8,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import controllers.AssetsFinder;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -31,7 +32,6 @@ import org.thymeleaf.standard.util.StandardProcessorUtils;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
 import org.unbescape.html.HtmlEscape;
-import play.Application;
 import play.Environment;
 import play.api.i18n.Lang;
 import play.i18n.MessagesApi;
@@ -57,13 +57,13 @@ public final class ThymeleafModule extends AbstractModule {
   }
 
   @Provides
-  public FileTemplateResolver provideFileTemplateResolver(
-      Application application, Environment environment) {
+  public FileTemplateResolver provideFileTemplateResolver(Environment environment) {
     FileTemplateResolver fileTemplateResolver = new FileTemplateResolver();
 
     fileTemplateResolver.setTemplateMode(TemplateMode.HTML);
     // Template file paths are all relative to server/app/views/
-    fileTemplateResolver.setPrefix(application.path().getAbsolutePath() + "/app/views/");
+    //    fileTemplateResolver.setPrefix(application.path().getAbsolutePath() + "/app/views/");
+    fileTemplateResolver.setPrefix("app/views/");
     fileTemplateResolver.setSuffix(".html");
     fileTemplateResolver.setCacheable(environment.isProd());
 
