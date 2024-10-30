@@ -25,6 +25,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import models.AccountModel;
 import models.ApplicationModel;
+import models.ApplicationStep;
 import models.CategoryModel;
 import models.DisplayMode;
 import models.ProgramModel;
@@ -46,6 +47,7 @@ import services.ProgramBlockValidation.AddQuestionResult;
 import services.ProgramBlockValidationFactory;
 import services.pagination.BasePaginationSpec;
 import services.pagination.PaginationResult;
+import services.program.LocalizationUpdate.ApplicationStepUpdate;
 import services.program.predicate.PredicateDefinition;
 import services.question.QuestionService;
 import services.question.ReadOnlyQuestionService;
@@ -66,6 +68,8 @@ public final class ProgramService {
       "A public display name for the program is required";
   private static final String MISSING_DISPLAY_DESCRIPTION_MSG =
       "A public description for the program is required";
+  private static final String MISSING_APPLICATION_STEP_ONE_MSG =
+      "One application step for the program is required";
   private static final String MISSING_DISPLAY_MODE_MSG =
       "A program visibility option must be selected";
   private static final String INVALID_NOTIFICATION_PREFERENCE_MSG =
@@ -338,6 +342,8 @@ public final class ProgramService {
       String adminDescription,
       String defaultDisplayName,
       String defaultDisplayDescription,
+      String defaultShortDescription,
+      ImmutableList<ApplicationStep> defaultApplicationSteps,
       String defaultConfirmationMessage,
       String externalLink,
       String displayMode,
@@ -351,6 +357,8 @@ public final class ProgramService {
             adminName,
             defaultDisplayName,
             defaultDisplayDescription,
+            defaultShortDescription,
+            defaultApplicationSteps,
             externalLink,
             displayMode,
             notificationPreferences,
@@ -382,6 +390,8 @@ public final class ProgramService {
             adminDescription,
             defaultDisplayName,
             defaultDisplayDescription,
+            defaultShortDescription,
+            defaultApplicationSteps,
             defaultConfirmationMessage,
             externalLink,
             displayMode,
@@ -421,6 +431,8 @@ public final class ProgramService {
       String adminName,
       String displayName,
       String displayDescription,
+      String shortDescription,
+      ImmutableList<ApplicationStep> applicationSteps,
       String externalLink,
       String displayMode,
       ImmutableList<String> notificationPreferences,
@@ -430,7 +442,8 @@ public final class ProgramService {
     errorsBuilder.addAll(
         validateProgramData(
             displayName,
-            displayDescription,
+            shortDescription,
+            applicationSteps,
             externalLink,
             displayMode,
             notificationPreferences,
@@ -492,6 +505,8 @@ public final class ProgramService {
       String adminDescription,
       String displayName,
       String displayDescription,
+      String shortDescription,
+      ImmutableList<ApplicationStep> applicationSteps,
       String confirmationMessage,
       String externalLink,
       String displayMode,
@@ -506,6 +521,8 @@ public final class ProgramService {
         validateProgramDataForUpdate(
             displayName,
             displayDescription,
+            shortDescription,
+            applicationSteps,
             externalLink,
             displayMode,
             notificationPreferences,
@@ -534,6 +551,7 @@ public final class ProgramService {
         notificationPreferences.stream()
             .map(ProgramNotificationPreference::valueOf)
             .collect(ImmutableList.toImmutableList());
+
     ProgramModel program =
         programDefinition.toBuilder()
             .setAdminDescription(adminDescription)
@@ -543,6 +561,12 @@ public final class ProgramService {
                 programDefinition
                     .localizedDescription()
                     .updateTranslation(locale, displayDescription))
+            .setLocalizedShortDescription(
+                programDefinition
+                    .localizedShortDescription()
+                    .updateTranslation(locale, shortDescription))
+            .setApplicationSteps(
+                applicationSteps) // will likely need to do some kind of translations update here
             .setLocalizedConfirmationMessage(newConfirmationMessageTranslations)
             .setExternalLink(externalLink)
             .setDisplayMode(DisplayMode.valueOf(displayMode))
@@ -630,6 +654,8 @@ public final class ProgramService {
   public ImmutableSet<CiviFormError> validateProgramDataForUpdate(
       String displayName,
       String displayDescription,
+      String shortDescription,
+      ImmutableList<ApplicationStep> applicationSteps,
       String externalLink,
       String displayMode,
       List<String> notificationPreferences,
@@ -637,7 +663,8 @@ public final class ProgramService {
       ImmutableList<Long> tiGroups) {
     return validateProgramData(
         displayName,
-        displayDescription,
+        shortDescription,
+        applicationSteps,
         externalLink,
         displayMode,
         notificationPreferences,
@@ -656,7 +683,8 @@ public final class ProgramService {
 
   private ImmutableSet<CiviFormError> validateProgramData(
       String displayName,
-      String displayDescription,
+      String shortDescription,
+      ImmutableList<ApplicationStep> applicationSteps,
       String externalLink,
       String displayMode,
       List<String> notificationPreferences,
@@ -666,13 +694,14 @@ public final class ProgramService {
     if (displayName.isBlank()) {
       errorsBuilder.add(CiviFormError.of(MISSING_DISPLAY_NAME_MSG));
     }
-    if (displayDescription.isBlank()) {
+    if (shortDescription.isBlank()) {
       errorsBuilder.add(CiviFormError.of(MISSING_DISPLAY_DESCRIPTION_MSG));
-    } else if (displayMode.equals(DisplayMode.SELECT_TI.getValue()) && tiGroups.isEmpty()) {
-      errorsBuilder.add(CiviFormError.of(MISSING_TI_ORGS_FOR_THE_DISPLAY_MODE));
     }
+    errorsBuilder = checkApplicationStepErrors(errorsBuilder, applicationSteps);
     if (displayMode.isBlank()) {
       errorsBuilder.add(CiviFormError.of(MISSING_DISPLAY_MODE_MSG));
+    } else if (displayMode.equals(DisplayMode.SELECT_TI.getValue()) && tiGroups.isEmpty()) {
+      errorsBuilder.add(CiviFormError.of(MISSING_TI_ORGS_FOR_THE_DISPLAY_MODE));
     }
     ImmutableList<String> validNotificationPreferences =
         Arrays.stream(ProgramNotificationPreference.values())
@@ -707,6 +736,35 @@ public final class ProgramService {
     return categoryRepository.listCategories().stream()
         .map(CategoryModel::getId)
         .collect(Collectors.toList());
+  }
+
+  private ImmutableSet.Builder<CiviFormError> checkApplicationStepErrors(
+      ImmutableSet.Builder<CiviFormError> errorsBuilder,
+      ImmutableList<ApplicationStep> applicationSteps) {
+    for (int i = 0; i < applicationSteps.size(); i++) {
+      ApplicationStep step = applicationSteps.get(i);
+      String title = step.getTitleForLocale(LocalizedStrings.DEFAULT_LOCALE).get();
+      String description = step.getDescriptionForLocale(LocalizedStrings.DEFAULT_LOCALE).get();
+      boolean haveTitle = !title.isBlank();
+      boolean haveDescription = !description.isBlank();
+      boolean haveCurrentStep = haveTitle && haveDescription;
+      // must have step 1
+      if (i == 0 && !haveCurrentStep) {
+        errorsBuilder.add(CiviFormError.of(MISSING_APPLICATION_STEP_ONE_MSG));
+      }
+      // steps must have title AND description
+      if (haveTitle && !haveDescription) {
+        errorsBuilder.add(
+            CiviFormError.of(
+                String.format(
+                    "Application step %s is missing a description", Integer.toString(i + 1))));
+      } else if (!haveTitle && !haveDescription) {
+        errorsBuilder.add(
+            CiviFormError.of(
+                String.format("Application step %s is missing a title", Integer.toString(i + 1))));
+      }
+    }
+    return errorsBuilder;
   }
 
   /**
@@ -759,6 +817,25 @@ public final class ProgramService {
       return ErrorAnd.error(errors);
     }
 
+    // make this into its own method
+    ImmutableList<ApplicationStep> applicationSteps = programDefinition.applicationSteps();
+    ImmutableList<ApplicationStepUpdate> translationUpdates = localizationUpdate.applicationSteps();
+
+    // loop through the translation updates
+    // get the index and use that to fetch the
+    // correct application step from all the steps
+    ImmutableList<ApplicationStep> updatedApplicationSteps =
+        translationUpdates.stream()
+            .map(
+                update -> {
+                  int index = update.index();
+                  ApplicationStep step = applicationSteps.get(index);
+                  step.setNewTitleTranslation(locale, update.localizedTitle());
+                  step.setNewDescriptionTranslation(locale, update.localizedDescription());
+                  return step;
+                })
+            .collect(ImmutableList.toImmutableList());
+
     ProgramDefinition.Builder newProgram =
         programDefinition.toBuilder()
             .setLocalizedName(
@@ -769,10 +846,15 @@ public final class ProgramService {
                 programDefinition
                     .localizedDescription()
                     .updateTranslation(locale, localizationUpdate.localizedDisplayDescription()))
+            .setLocalizedShortDescription(
+                programDefinition
+                    .localizedShortDescription()
+                    .updateTranslation(locale, localizationUpdate.localizedShortDescription()))
             .setLocalizedConfirmationMessage(
                 programDefinition
                     .localizedConfirmationMessage()
                     .updateTranslation(locale, localizationUpdate.localizedConfirmationMessage()))
+            .setApplicationSteps(updatedApplicationSteps)
             .setBlockDefinitions(toUpdateBlockBuilder.build());
     updateSummaryImageDescriptionLocalization(
         programDefinition,

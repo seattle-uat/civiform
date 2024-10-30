@@ -161,6 +161,15 @@ public final class TextFormatter {
     return markdownText.substring(0, indexOfClosingTag) + markdownWithRequiredIndicator;
   }
 
+  public static String removeMarkdown(String text) {
+    // TODO: probably want to allow Atags so links are still formatted
+    // TODO: figure out how to handle LI elements
+    String markdownText = formatTextToSanitizedHTML(text, false, false);
+    PolicyFactory customPolicy =
+        new HtmlPolicyBuilder().allowElements("").allowAttributes("").globally().toFactory();
+    return customPolicy.sanitize(markdownText, /* listener */ null, /* context= */ null);
+  }
+
   public static String sanitizeHtml(String markdownText) {
     PolicyFactory customPolicy =
         new HtmlPolicyBuilder()

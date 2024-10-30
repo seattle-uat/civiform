@@ -78,6 +78,10 @@ public class ProgramModel extends BaseModel {
 
   @DbJsonB private LocalizedStrings localizedDescription;
 
+  @DbJsonB private LocalizedStrings localizedShortDescription;
+
+  @DbJsonB private ImmutableList<ApplicationStep> applicationSteps;
+
   @DbJsonB private LocalizedStrings localizedConfirmationMessage;
 
   @Constraints.Required @DbJson private ImmutableList<BlockDefinition> blockDefinitions;
@@ -171,6 +175,8 @@ public class ProgramModel extends BaseModel {
     this.externalLink = definition.externalLink();
     this.localizedName = definition.localizedName();
     this.localizedDescription = definition.localizedDescription();
+    this.localizedShortDescription = definition.localizedShortDescription();
+    this.applicationSteps = definition.applicationSteps();
     this.localizedConfirmationMessage = definition.localizedConfirmationMessage();
     this.blockDefinitions = definition.blockDefinitions();
     this.displayMode = definition.displayMode().getValue();
@@ -199,6 +205,8 @@ public class ProgramModel extends BaseModel {
       String adminDescription,
       String defaultDisplayName,
       String defaultDisplayDescription,
+      String defaultShortDescription,
+      ImmutableList<ApplicationStep> applicationSteps,
       String defaultConfirmationMessage,
       String externalLink,
       String displayMode,
@@ -214,6 +222,8 @@ public class ProgramModel extends BaseModel {
     // A program is always created with the default CiviForm locale first, then localized.
     this.localizedName = LocalizedStrings.withDefaultValue(defaultDisplayName);
     this.localizedDescription = LocalizedStrings.withDefaultValue(defaultDisplayDescription);
+    this.localizedShortDescription = LocalizedStrings.withDefaultValue(defaultShortDescription);
+    this.applicationSteps = applicationSteps;
     this.localizedConfirmationMessage =
         LocalizedStrings.withDefaultValue(defaultConfirmationMessage);
     this.externalLink = externalLink;
@@ -265,6 +275,8 @@ public class ProgramModel extends BaseModel {
             .setBlockDefinitions(blockDefinitions)
             .setLocalizedName(localizedName)
             .setLocalizedDescription(localizedDescription)
+            .setLocalizedShortDescription(localizedShortDescription)
+            .setApplicationSteps(applicationSteps)
             .setExternalLink(externalLink)
             .setDisplayMode(DisplayMode.valueOf(displayMode))
             .setNotificationPreferences(ImmutableList.copyOf(notificationPreferences))

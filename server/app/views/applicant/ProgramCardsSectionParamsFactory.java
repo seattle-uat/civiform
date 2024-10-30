@@ -21,6 +21,7 @@ import services.cloud.PublicStorageClient;
 import services.program.ProgramDefinition;
 import views.ProgramImageUtils;
 import views.components.Modal;
+import views.components.TextFormatter;
 
 /**
  * Factory for creating parameter info for applicant program card sections.
@@ -134,17 +135,6 @@ public final class ProgramCardsSectionParamsFactory {
       actionUrl = applicantRoutes.edit(profile.get(), applicantId.get(), program.id()).url();
     }
 
-    // Note this doesn't yet manage markdown, links and appropriate aria labels for
-    // links, and whatever else our current cards do.
-    String detailsUrl = program.externalLink();
-    if (detailsUrl.isEmpty() || detailsUrl.isBlank()) {
-      // TODO: Update this to point to the new northstar details page.
-      detailsUrl =
-          profile.isPresent() && applicantId.isPresent()
-              ? applicantRoutes.review(profile.get(), applicantId.get(), program.id()).url()
-              : applicantRoutes.review(program.id()).url();
-    }
-
     boolean isGuest = personalInfo.getType() == GUEST;
 
     ImmutableList.Builder<String> categoriesBuilder = ImmutableList.builder();
@@ -153,10 +143,24 @@ public final class ProgramCardsSectionParamsFactory {
             .map(c -> c.getLocalizedName().getOrDefault(preferredLocale))
             .collect(ImmutableList.toImmutableList()));
 
+    // Use the short description if it exists. Otherwise, fall back to the truncated long
+    // description;
+    String description = program.localizedShortDescription().getOrDefault(preferredLocale);
+    if (description.isBlank()) {
+      description =
+          TextFormatter.removeMarkdown(
+              program.localizedDescription().getOrDefault(preferredLocale));
+      if (description.length() > 100) {
+        description = description.substring(0, 100).concat("...");
+      }
+    }
+
     cardBuilder
         .setTitle(program.localizedName().getOrDefault(preferredLocale))
-        .setBody(program.localizedDescription().getOrDefault(preferredLocale))
-        .setDetailsUrl(detailsUrl)
+        .setBody(description)
+        .setDetailsUrl(
+            controllers.applicant.routes.ApplicantProgramsController.show(program.adminName())
+                .url())
         .setActionUrl(actionUrl)
         .setIsGuest(isGuest)
         .setCategories(categoriesBuilder.build())

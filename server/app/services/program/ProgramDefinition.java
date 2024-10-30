@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import models.ApplicationStep;
 import models.CategoryModel;
 import models.DisplayMode;
 import models.ProgramModel;
@@ -98,6 +99,12 @@ public abstract class ProgramDefinition {
   /** A human readable description of a Program, localized for each supported locale. */
   @JsonProperty("localizedDescription")
   public abstract LocalizedStrings localizedDescription();
+
+  @JsonProperty("localizedShortDescription")
+  public abstract LocalizedStrings localizedShortDescription();
+
+  @JsonProperty("applicationSteps")
+  public abstract ImmutableList<ApplicationStep> applicationSteps();
 
   /**
    * A custom message to be inserted into the confirmation screen for the Program, localized for
@@ -803,6 +810,13 @@ public abstract class ProgramDefinition {
     @JsonProperty("localizedDescription")
     public abstract Builder setLocalizedDescription(LocalizedStrings localizedDescription);
 
+    @JsonProperty("localizedShortDescription")
+    public abstract Builder setLocalizedShortDescription(
+        LocalizedStrings localizedShortDescription);
+
+    @JsonProperty("applicationSteps")
+    public abstract Builder setApplicationSteps(ImmutableList<ApplicationStep> applicationSteps);
+
     @JsonProperty("localizedConfirmationMessage")
     public abstract Builder setLocalizedConfirmationMessage(
         LocalizedStrings localizedConfirmationMessage);
@@ -815,6 +829,10 @@ public abstract class ProgramDefinition {
     public abstract LocalizedStrings.Builder localizedNameBuilder();
 
     public abstract LocalizedStrings.Builder localizedDescriptionBuilder();
+
+    public abstract LocalizedStrings.Builder localizedShortDescriptionBuilder();
+
+    public abstract ImmutableList.Builder<ApplicationStep> applicationStepsBuilder();
 
     public abstract LocalizedStrings.Builder localizedConfirmationMessageBuilder();
 
@@ -854,6 +872,19 @@ public abstract class ProgramDefinition {
 
     public Builder addLocalizedDescription(Locale locale, String description) {
       localizedDescriptionBuilder().put(locale, description);
+      return this;
+    }
+
+    public Builder addLocalizedShortDescription(Locale locale, String description) {
+      localizedShortDescriptionBuilder().put(locale, description);
+      return this;
+    }
+
+    // I think we need a separate method for updating an existing application step with
+    // a translation
+    public Builder addApplicationStep(String title, String description) {
+      ApplicationStep newEntry = new ApplicationStep(title, description);
+      applicationStepsBuilder().add(newEntry);
       return this;
     }
 

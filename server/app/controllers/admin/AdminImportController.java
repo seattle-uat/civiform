@@ -190,6 +190,8 @@ public class AdminImportController extends CiviFormController {
             program.adminName(),
             program.localizedName().getDefault(),
             program.localizedDescription().getDefault(),
+            program.localizedShortDescription().getDefault(),
+            program.applicationSteps(),
             program.externalLink(),
             program.displayMode().getValue(),
             notificationPreferences,
