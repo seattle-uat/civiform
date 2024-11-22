@@ -30,6 +30,7 @@
 
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
+  <logger name="durablejobs" level="DEBUG" />
   <logger name="loggingfilter" level="INFO" />
   <logger name="controllers" level="INFO" />
   <logger name="services" level="INFO" />
