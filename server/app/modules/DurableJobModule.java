@@ -19,6 +19,7 @@ import durablejobs.StartupJobScheduler;
 import durablejobs.jobs.AddCategoryAndTranslationsJob;
 import durablejobs.jobs.AddOperatorToLeafAddressServiceAreaJob;
 import durablejobs.jobs.ConvertAddressServiceAreaToArrayJob;
+import durablejobs.jobs.CopyFileKeyForMultipleFileUpload;
 import durablejobs.jobs.MigratePrimaryApplicantInfoJob;
 import durablejobs.jobs.OldJobCleanupJob;
 import durablejobs.jobs.ReportingDashboardMonthlyRefreshJob;
@@ -187,6 +188,11 @@ public final class DurableJobModule extends AbstractModule {
         persistedDurableJob ->
             new AddCategoryAndTranslationsJob(
                 categoryRepository, environment, persistedDurableJob));
+
+    durableJobRegistry.registerStartupJob(
+        DurableJobName.COPY_FILE_KEY_FOR_MULTIPLE_FILE_UPLOAD,
+        JobType.RUN_ONCE,
+        persistedDurableJob -> new CopyFileKeyForMultipleFileUpload(persistedDurableJob));
 
     return durableJobRegistry;
   }
