@@ -134,6 +134,7 @@ test.describe('csv export for multioption question', () => {
 
 test.describe('normal application flow', () => {
   test.beforeEach(async ({page}) => {
+    await enableFeatureFlag(page, 'bulk_status_update_enabled')
     await seedQuestions(page)
     await page.goto('/')
   })
@@ -360,6 +361,8 @@ test.describe('normal application flow', () => {
 
     const pdfFile = await adminPrograms.getApplicationPdf()
     expect(pdfFile.length).toBeGreaterThan(1)
+
+    await page.getByRole('link', {name: 'Back'}).click()
 
     await logout(page)
 

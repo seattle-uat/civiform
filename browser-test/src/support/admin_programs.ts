@@ -1,5 +1,5 @@
 import {expect} from './civiform_fixtures'
-import {ElementHandle, Frame, Page} from 'playwright'
+import {ElementHandle, Page} from 'playwright'
 import {readFileSync} from 'fs'
 import {
   clickAndWaitForModal,
@@ -69,6 +69,10 @@ function slugify(value: string): string {
     .replace(/[^a-zA-Z0-9-]/g, '')
 }
 
+function findApplicantId(str: string): string {
+  return str.replace(/\D/g, '')
+}
+
 export class AdminPrograms {
   public page!: Page
 
@@ -109,9 +113,9 @@ export class AdminPrograms {
   ) {
     expect(
       await this.page.innerText(
-        this.selectApplicationCardForApplicant(applicant),
+        this.selectApplicationRowForApplicant(applicant),
       ),
-    ).toContain(`Status: ${statusString}`)
+    ).toContain(`${statusString}`)
   }
 
   async expectApplicationStatusDoesntContain(
@@ -120,7 +124,7 @@ export class AdminPrograms {
   ) {
     expect(
       await this.page.innerText(
-        this.selectApplicationCardForApplicant(applicant),
+        this.selectApplicationRowForApplicant(applicant),
       ),
     ).not.toContain(statusString)
   }
@@ -136,6 +140,12 @@ export class AdminPrograms {
       'https://usa.gov',
       ProgramVisibility.DISABLED,
     )
+  }
+  async getApplicationId() {
+    const htmlElement = await this.page
+      .locator('.cf-application-id')
+      .innerText()
+    return findApplicantId(htmlElement)
   }
 
   /**
@@ -1020,19 +1030,17 @@ export class AdminPrograms {
   }
 
   async expectApplicationCount(expectedCount: number) {
-    await expect(this.page.locator('.cf-admin-application-card')).toHaveCount(
+    await expect(this.page.locator('.cf-admin-application-row')).toHaveCount(
       expectedCount,
     )
   }
 
-  selectApplicationCardForApplicant(applicantName: string) {
-    return `.cf-admin-application-card:has-text("${applicantName}")`
+  selectApplicationRowForApplicant(applicantName: string) {
+    return `.cf-admin-application-row:has-text("${applicantName}")`
   }
 
   selectWithinApplicationForApplicant(applicantName: string, selector: string) {
-    return (
-      this.selectApplicationCardForApplicant(applicantName) + ' ' + selector
-    )
+    return this.selectApplicationRowForApplicant(applicantName) + ' ' + selector
   }
 
   selectQuestionWithinBlock(question: string) {
@@ -1097,36 +1105,8 @@ export class AdminPrograms {
   }
 
   async viewApplicationForApplicant(applicantName: string) {
-    await Promise.all([
-      this.waitForApplicationFrame(),
-      this.page.click(
-        this.selectWithinApplicationForApplicant(
-          applicantName,
-          'a:text("View")',
-        ),
-      ),
-    ])
-  }
-
-  private static APPLICATION_DISPLAY_FRAME_NAME = 'application-display-frame'
-
-  applicationFrame(): Frame {
-    return this.page.frame(AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME)!
-  }
-
-  applicationFrameLocator() {
-    return this.page.frameLocator(
-      `iframe[name="${AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME}"]`,
-    )
-  }
-
-  async waitForApplicationFrame() {
-    const frame = this.page.frame(AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME)
-    if (!frame) {
-      throw new Error('Expected an application frame')
-    }
-    await frame.waitForNavigation()
-    await waitForPageJsLoad(frame)
+    await this.page.getByRole('link', {name: applicantName}).click()
+    await waitForPageJsLoad(this.page)
   }
 
   async expectApplicationAnswers(
@@ -1134,7 +1114,7 @@ export class AdminPrograms {
     questionName: string,
     answer: string,
   ) {
-    const blockText = await this.applicationFrameLocator()
+    const blockText = await this.page
       .locator(this.selectApplicationBlock(blockName))
       .innerText()
 
@@ -1144,27 +1124,23 @@ export class AdminPrograms {
 
   async expectApplicationAnswerLinks(blockName: string, questionName: string) {
     expect(
-      await this.applicationFrameLocator()
+      await this.page
         .locator(this.selectApplicationBlock(blockName))
         .innerText(),
     ).toContain(questionName)
     expect(
-      await this.applicationFrameLocator()
+      await this.page
         .locator(this.selectWithinApplicationBlock(blockName, 'a'))
         .getAttribute('href'),
     ).not.toBeNull()
   }
 
   async isStatusSelectorVisible(): Promise<boolean> {
-    return this.applicationFrameLocator()
-      .locator(this.statusSelector())
-      .isVisible()
+    return this.page.locator(this.statusSelector()).isVisible()
   }
 
   async getStatusOption(): Promise<string> {
-    return this.applicationFrameLocator()
-      .locator(this.statusSelector())
-      .inputValue()
+    return this.page.locator(this.statusSelector()).inputValue()
   }
 
   /**
@@ -1173,16 +1149,9 @@ export class AdminPrograms {
   async setStatusOptionAndAwaitModal(
     status: string,
   ): Promise<ElementHandle<HTMLElement>> {
-    await this.applicationFrameLocator()
-      .locator(this.statusSelector())
-      .selectOption(status)
+    await this.page.locator(this.statusSelector()).selectOption(status)
 
-    const frame = this.page.frame(AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME)
-    if (!frame) {
-      throw new Error('Expected an application frame')
-    }
-
-    return waitForAnyModal(frame)
+    return waitForAnyModal(this.page)
   }
 
   /**
@@ -1192,8 +1161,8 @@ export class AdminPrograms {
   async confirmStatusUpdateModal(modal: ElementHandle<HTMLElement>) {
     // Confirming should cause the frame to redirect and waitForNavigation must be called prior
     // to taking the action that would trigger navigation.
-    const confirmButton = (await modal.$('text=Confirm'))!
-    await Promise.all([this.page.waitForNavigation(), confirmButton.click()])
+    await (await modal.$('text=Confirm'))!.click()
+
     await waitForPageJsLoad(this.page)
   }
 
@@ -1207,24 +1176,16 @@ export class AdminPrograms {
   }
 
   async isEditNoteVisible(): Promise<boolean> {
-    return this.applicationFrameLocator()
-      .locator(this.editNoteSelector())
-      .isVisible()
+    return this.page.locator(this.editNoteSelector()).isVisible()
   }
 
   /**
    * Returns the content of the note modal when viewing an application.
    */
   async getNoteContent() {
-    await this.applicationFrameLocator()
-      .locator(this.editNoteSelector())
-      .click()
+    await this.page.locator(this.editNoteSelector()).click()
 
-    const frame = this.page.frame(AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME)
-    if (!frame) {
-      throw new Error('Expected an application frame')
-    }
-    const editModal = await waitForAnyModal(frame)
+    const editModal = await waitForAnyModal(this.page)
     const noteContentArea = (await editModal.$('textarea'))!
     return noteContentArea.inputValue()
   }
@@ -1233,15 +1194,9 @@ export class AdminPrograms {
    * Clicks the edit note button, and returns the modal.
    */
   async awaitEditNoteModal(): Promise<ElementHandle<HTMLElement>> {
-    await this.applicationFrameLocator()
-      .locator(this.editNoteSelector())
-      .click()
+    await this.page.locator(this.editNoteSelector()).click()
 
-    const frame = this.page.frame(AdminPrograms.APPLICATION_DISPLAY_FRAME_NAME)
-    if (!frame) {
-      throw new Error('Expected an application frame')
-    }
-    return await waitForAnyModal(frame)
+    return await waitForAnyModal(this.page)
   }
 
   /**
@@ -1292,9 +1247,7 @@ export class AdminPrograms {
   async getApplicationPdf() {
     const [downloadEvent] = await Promise.all([
       this.page.waitForEvent('download'),
-      this.applicationFrameLocator()
-        .locator('button:has-text("Export to PDF")')
-        .click(),
+      this.page.locator('button:has-text("Export to PDF")').click(),
     ])
     const path = await downloadEvent.path()
     if (path === null) {
@@ -1418,8 +1371,8 @@ export class AdminPrograms {
     await this.page.click('input[name=isCommonIntakeForm]')
   }
 
-  async isPaginationVisibleForApplicationList(): Promise<boolean> {
-    const applicationListDiv = this.page.getByTestId('application-list')
+  async isPaginationVisibleForApplicationTable(): Promise<boolean> {
+    const applicationListDiv = this.page.getByTestId('application-table')
     return applicationListDiv.locator('.usa-pagination').isVisible()
   }
 

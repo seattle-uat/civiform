@@ -19,6 +19,9 @@ test.describe('with program statuses', {tag: ['@northstar']}, () => {
     async ({page, adminPrograms, adminProgramStatuses, applicantQuestions}) => {
       await loginAsAdmin(page)
 
+      // enable bulk status feature flag
+      await enableFeatureFlag(page, 'bulk_status_update_enabled')
+
       await adminPrograms.addProgram(programName)
       await adminPrograms.gotoDraftProgramManageStatusesPage(programName)
       await adminProgramStatuses.createStatus(approvedStatusName)
@@ -39,6 +42,9 @@ test.describe('with program statuses', {tag: ['@northstar']}, () => {
       const modal =
         await adminPrograms.setStatusOptionAndAwaitModal(approvedStatusName)
       await adminPrograms.confirmStatusUpdateModal(modal)
+
+      await page.getByRole('link', {name: 'Back'}).click()
+
       await logout(page)
 
       await enableFeatureFlag(page, 'north_star_applicant_ui')
