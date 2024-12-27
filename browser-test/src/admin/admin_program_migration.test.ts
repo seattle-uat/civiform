@@ -103,6 +103,7 @@ test.describe('program migration', () => {
   })
 
   test('import errors', async ({
+    request,
     page,
     adminPrograms,
     adminProgramMigration,
@@ -177,7 +178,7 @@ test.describe('program migration', () => {
       )
     })
 
-    await seedProgramsAndCategories(page)
+    await seedProgramsAndCategories(request)
     await page.goto('/')
     await adminPrograms.goToExportProgramPage(
       'Comprehensive Sample Program',
@@ -293,12 +294,13 @@ test.describe('program migration', () => {
   })
 
   test('export then import', async ({
+    request,
     page,
     adminPrograms,
     adminProgramMigration,
   }) => {
     await test.step('seed programs', async () => {
-      await seedProgramsAndCategories(page)
+      await seedProgramsAndCategories(request)
       await page.goto('/')
       await loginAsAdmin(page)
     })
@@ -474,12 +476,13 @@ test.describe('program migration', () => {
   })
 
   test('export then import with no duplicate questions enabled', async ({
+    request,
     page,
     adminPrograms,
     adminProgramMigration,
   }) => {
     await test.step('seed programs', async () => {
-      await seedProgramsAndCategories(page)
+      await seedProgramsAndCategories(request)
       await page.goto('/')
       await loginAsAdmin(page)
       await enableFeatureFlag(
