@@ -4,12 +4,11 @@ import {
   loginAsAdmin,
   loginAsTestUser,
   logout,
-  seedQuestions,
 } from '../support'
 
 test.describe('Application PDF download test', () => {
-  test.beforeEach(async ({page}) => {
-    await seedQuestions(page)
+  test.beforeEach(async ({page, seeding}) => {
+    await seeding.seedQuestions()
     await page.goto('/')
   })
 
