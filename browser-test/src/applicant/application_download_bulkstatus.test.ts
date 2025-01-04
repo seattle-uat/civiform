@@ -6,17 +6,17 @@ import {
   loginAsProgramAdmin,
   loginAsTestUser,
   logout,
-  seedQuestions,
   validateScreenshot,
   waitForPageJsLoad,
 } from '../support'
 
 test.describe('csv export for multioption question', () => {
-  test.beforeEach(async ({page}) => {
+  test.beforeEach(async ({page, seeding}) => {
     await enableFeatureFlag(page, 'bulk_status_update_enabled')
-    await seedQuestions(page)
+    await seeding.seedQuestions()
     await page.goto('/')
   })
+
   test('multioption csv into its own column', async ({
     page,
     adminQuestions,
@@ -135,9 +135,9 @@ test.describe('csv export for multioption question', () => {
 })
 
 test.describe('normal application flow', () => {
-  test.beforeEach(async ({page}) => {
+  test.beforeEach(async ({page, seeding}) => {
     await enableFeatureFlag(page, 'bulk_status_update_enabled')
-    await seedQuestions(page)
+    await seeding.seedQuestions()
     await page.goto('/')
   })
 
