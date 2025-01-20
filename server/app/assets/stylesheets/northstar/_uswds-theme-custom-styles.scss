@@ -303,6 +303,13 @@ h1.usa-step-indicator__heading {
   max-width: 380px;
 }
 
+// Reset the margin on the parent element of the `p` tag that is
+// added to when we render markdown content. USWDS adds extra
+// margins here and we need to remove it.
+p.cf-markdown-rendered-content {
+  margin: 0;
+}
+
 .cf-applicant-question-help-text {
   max-width: 480px;
 }
