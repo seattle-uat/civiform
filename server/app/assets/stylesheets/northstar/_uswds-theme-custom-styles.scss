@@ -347,6 +347,10 @@ main {
   display: grid;
 }
 
+.cf-application-card .usa-prose p {
+  margin: 0;
+}
+
 .cf-card-footer {
   display: flex;
   flex-wrap: wrap;
