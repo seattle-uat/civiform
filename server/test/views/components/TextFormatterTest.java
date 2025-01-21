@@ -77,8 +77,8 @@ public class TextFormatterTest extends ResetPostgres {
 
     assertThat(content.get(0).render())
         .isEqualTo(
-            "<p class=\"cf-markdown-rendered-content\">Enter your full legal name.<span class=\"text-red-600"
-                + " font-semibold\">\u00a0*</span></p>\n");
+            "<p class=\"cf-markdown-rendered-content\">Enter your full legal name.<span"
+                + " class=\"text-red-600 font-semibold\">\u00a0*</span></p>\n");
   }
 
   @Test
@@ -91,7 +91,8 @@ public class TextFormatterTest extends ResetPostgres {
     String htmlContentWithUnorderedList = contentWithUnorderedList.get(0).render();
     assertThat(htmlContentWithUnorderedList)
         .isEqualTo(
-            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600 font-semibold\"> *</span></p>\n"
+            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600"
+                + " font-semibold\"> *</span></p>\n"
                 + "<ul class=\"list-disc mx-8\"><li>list item one</li><li>list item"
                 + " two</li></ul>\n");
 
@@ -103,7 +104,8 @@ public class TextFormatterTest extends ResetPostgres {
     String htmlContentWithOrderedList = contentWithOrderedList.get(0).render();
     assertThat(htmlContentWithOrderedList)
         .isEqualTo(
-            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600 font-semibold\"> *</span></p>\n"
+            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600"
+                + " font-semibold\"> *</span></p>\n"
                 + "<ol class=\"list-decimal mx-8\"><li>list item one</li><li>list item"
                 + " two</li></ol>\n");
   }
@@ -193,7 +195,8 @@ public class TextFormatterTest extends ResetPostgres {
             withBlankLine, /* preserveEmptyLines= */ true, /* addRequiredIndicator= */ false);
     assertThat(preservedBlanksContent.get(0).render())
         .isEqualTo(
-            "<p class=\"cf-markdown-rendered-content\">This is the first line of content.<br /> </p>\n"
+            "<p class=\"cf-markdown-rendered-content\">This is the first line of content.<br />"
+                + " </p>\n"
                 + "<p>This is the second (or third) line of content.<br /> </p>\n"
                 + "<p> </p>\n"
                 + "<p>This is the third (or sixth) line of content.</p>\n");
