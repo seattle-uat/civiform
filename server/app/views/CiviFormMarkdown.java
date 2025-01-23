@@ -6,9 +6,11 @@ import java.util.Map;
 import org.commonmark.Extension;
 import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.node.BulletList;
+import org.commonmark.node.Document;
 import org.commonmark.node.Link;
 import org.commonmark.node.Node;
 import org.commonmark.node.OrderedList;
+import org.commonmark.node.Paragraph;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -47,6 +49,15 @@ public final class CiviFormMarkdown {
 
     @Override
     public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
+      // Add a class to indicate this is the outer element of the markdown
+      // formatted block.
+      if (node.getParent() != null
+          && node.getParent() instanceof Document
+          && node.getParent().getFirstChild() == node
+          && node instanceof Paragraph) {
+        attributes.put("class", "cf-markdown-rendered-content");
+      }
+
       if (node instanceof Link) {
         attributes.put("class", StyleUtils.removeStyles(ApplicantStyles.LINK, "text-sm"));
         attributes.put("target", "_blank");

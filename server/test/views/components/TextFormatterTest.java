@@ -77,8 +77,8 @@ public class TextFormatterTest extends ResetPostgres {
 
     assertThat(content.get(0).render())
         .isEqualTo(
-            "<p>Enter your full legal name.<span class=\"text-red-600"
-                + " font-semibold\">\u00a0*</span></p>\n");
+            "<p class=\"cf-markdown-rendered-content\">Enter your full legal name.<span"
+                + " class=\"text-red-600 font-semibold\">\u00a0*</span></p>\n");
   }
 
   @Test
@@ -91,7 +91,8 @@ public class TextFormatterTest extends ResetPostgres {
     String htmlContentWithUnorderedList = contentWithUnorderedList.get(0).render();
     assertThat(htmlContentWithUnorderedList)
         .isEqualTo(
-            "<p>Here is some text.<span class=\"text-red-600 font-semibold\"> *</span></p>\n"
+            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600"
+                + " font-semibold\"> *</span></p>\n"
                 + "<ul class=\"list-disc mx-8\"><li>list item one</li><li>list item"
                 + " two</li></ul>\n");
 
@@ -103,7 +104,8 @@ public class TextFormatterTest extends ResetPostgres {
     String htmlContentWithOrderedList = contentWithOrderedList.get(0).render();
     assertThat(htmlContentWithOrderedList)
         .isEqualTo(
-            "<p>Here is some text.<span class=\"text-red-600 font-semibold\"> *</span></p>\n"
+            "<p class=\"cf-markdown-rendered-content\">Here is some text.<span class=\"text-red-600"
+                + " font-semibold\"> *</span></p>\n"
                 + "<ol class=\"list-decimal mx-8\"><li>list item one</li><li>list item"
                 + " two</li></ol>\n");
   }
@@ -144,7 +146,7 @@ public class TextFormatterTest extends ResetPostgres {
 
     assertThat(htmlContent)
         .isEqualTo(
-            "<p>This is my list:</p>\n"
+            "<p class=\"cf-markdown-rendered-content\">This is my list:</p>\n"
                 + "<ul class=\"list-disc mx-8\"><li>cream"
                 + " cheese</li><li>eggs</li><li>sugar</li><li>vanilla</li></ul>\n");
   }
@@ -171,7 +173,7 @@ public class TextFormatterTest extends ResetPostgres {
     assertThat(htmlContent)
         .isEqualTo(
             """
-<p>This is my list:</p>
+<p class="cf-markdown-rendered-content">This is my list:</p>
 <ol class="list-decimal mx-8"><li>cream cheese</li></ol>
 <p><strong>hello</strong></p>
 <ol start="2" class="list-decimal mx-8"><li>eggs</li><li>sugar</li><li>vanilla</li></ol>
@@ -193,7 +195,8 @@ public class TextFormatterTest extends ResetPostgres {
             withBlankLine, /* preserveEmptyLines= */ true, /* addRequiredIndicator= */ false);
     assertThat(preservedBlanksContent.get(0).render())
         .isEqualTo(
-            "<p>This is the first line of content.<br /> </p>\n"
+            "<p class=\"cf-markdown-rendered-content\">This is the first line of content.<br />"
+                + " </p>\n"
                 + "<p>This is the second (or third) line of content.<br /> </p>\n"
                 + "<p> </p>\n"
                 + "<p>This is the third (or sixth) line of content.</p>\n");
@@ -203,7 +206,7 @@ public class TextFormatterTest extends ResetPostgres {
             withBlankLine, /* preserveEmptyLines= */ false, /* addRequiredIndicator= */ false);
     assertThat(nonPreservedBlanksContent.get(0).render())
         .isEqualTo(
-            "<p>This is the first line of content.</p>\n"
+            "<p class=\"cf-markdown-rendered-content\">This is the first line of content.</p>\n"
                 + "<p>This is the second (or third) line of content.</p>\n"
                 + "<p>This is the third (or sixth) line of content.</p>\n");
   }

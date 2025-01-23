@@ -29,6 +29,41 @@ See the radio-option below as an example.
   font-weight: font-weight('bold');
 }
 
+.hidden {
+  display: none;
+}
+
+// -- start
+// Backwards compatible step for migrating tailwind to keep some SVGs correctly
+// sized. This is shared in admin and applicant sides so until we rewrite SVG
+// support or migrate the admin we'll use the same settings from tailwind.
+svg {
+  &.w-auto {
+    width: auto;
+  }
+  &.h-5 {
+    height: 1.25rem;
+  }
+}
+// -- end
+
+// Backwards compatible step for migrating tailwind
+.text-red-600 {
+  @include u-color('error-dark');
+}
+
+.cf-file-uploading-tag {
+  background-color: #fff7bf;
+  color: #594d00;
+  visibility: hidden;
+}
+
+/* If a file is being uploaded, show the file uploading tag... */
+
+.cf-file-uploading .cf-file-uploading-tag {
+  visibility: visible;
+}
+
 /* Rather than having a focus outline around the checkbox or radio button,
 it is around the label */
 .usa-checkbox__input:focus + [class*='__label']::before,
@@ -84,8 +119,8 @@ it is around the label */
 }
 
 .cf-no-margin-padding {
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
 }
 
 .cf-north-star-enumerator-field {
@@ -303,6 +338,13 @@ h1.usa-step-indicator__heading {
   max-width: 380px;
 }
 
+// Reset the margin on the parent element of the `p` tag that is
+// added to when we render markdown content. USWDS adds extra
+// margins here and we need to remove it.
+p.cf-markdown-rendered-content {
+  margin: 0;
+}
+
 .cf-applicant-question-help-text {
   max-width: 480px;
 }
@@ -338,6 +380,10 @@ main {
 
 .cf-application-card {
   display: grid;
+}
+
+.cf-application-card .usa-prose p {
+  margin: 0;
 }
 
 .cf-card-footer {
