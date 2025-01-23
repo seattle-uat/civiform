@@ -114,7 +114,12 @@ jobs:
       - name: Run browser tests with ${{ matrix.cloud }}
         env:
           CI: true
-        run: bin/run-browser-tests-ci --shard="${{ matrix.shard_number }}/${{ env.SHARD_TOTAL }}"
+        run: |
+          if [[ "${{ matrix.cloud }}" == "azure" ]]; then
+            bin/run-browser-tests-ci --shard="${{ matrix.shard_number }}/${{ env.SHARD_TOTAL }}" --grep-invert "@skip-on-azure"
+          else
+            bin/run-browser-tests-ci --shard="${{ matrix.shard_number }}/${{ env.SHARD_TOTAL }}"
+          fi
 
       # We'll treat aws as the source of truth for images snapshots. Attempts to run both will
       # end up with two places trying to update the same images.
