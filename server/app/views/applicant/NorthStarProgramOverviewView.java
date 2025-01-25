@@ -24,7 +24,8 @@ import views.NorthStarBaseView;
 import views.components.TextFormatter;
 
 /**
- * Renders the program overview page for applicants, which describes the program to the applicant
+ * Renders the program overview page for applicants, which describes the program
+ * to the applicant
  * before they start an application.
  */
 public class NorthStarProgramOverviewView extends NorthStarBaseView {
@@ -56,9 +57,8 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
       CiviFormProfile profile,
       ProgramDefinition programDefinition) {
 
-    ThymeleafModule.PlayThymeleafContext context =
-        createThymeleafContext(
-            request, Optional.of(applicantId), Optional.of(profile), personalInfo, messages);
+    ThymeleafModule.PlayThymeleafContext context = createThymeleafContext(
+        request, Optional.of(applicantId), Optional.of(profile), personalInfo, messages);
 
     Locale preferredLocale = messages.lang().toLocale();
 
@@ -74,8 +74,7 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
     String localizedProgramDescription = getProgramDescription(programDefinition, preferredLocale);
     context.setVariable("programDescription", localizedProgramDescription);
 
-    ImmutableMap<String, String> applicationStepsMap =
-        getStepsMap(programDefinition, preferredLocale);
+    ImmutableMap<String, String> applicationStepsMap = getStepsMap(programDefinition, preferredLocale);
     context.setVariable("applicationSteps", applicationStepsMap.entrySet());
 
     AlertSettings eligibilityAlertSettings = createEligibilityAlertSettings(messages);
@@ -92,8 +91,7 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
 
   private String getProgramDescription(
       ProgramDefinition programDefinition, Locale preferredLocale) {
-    String localizedProgramDescription =
-        programDefinition.localizedDescription().getOrDefault(preferredLocale);
+    String localizedProgramDescription = programDefinition.localizedDescription().getOrDefault(preferredLocale);
 
     if (!localizedProgramDescription.isEmpty()) {
       return TextFormatter.formatTextToSanitizedHTML(
@@ -107,14 +105,15 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
 
   private AlertSettings createEligibilityAlertSettings(Messages messages) {
     String alertText = messages.at(MessageKey.ALERT_LIKELY_ELIGIBLE.getKeyName());
-    AlertSettings eligibilityAlertSettings =
-        new AlertSettings(
-            /* show= */ true,
-            Optional.empty(),
-            alertText,
-            AlertType.INFO,
-            ImmutableList.of(),
-            /* isSlim= */ true);
+    AlertSettings eligibilityAlertSettings = new AlertSettings(
+        /* show= */ true,
+        Optional.empty(),
+        alertText,
+        /* unescapedDescription= */ false,
+        AlertType.INFO,
+        ImmutableList.of(),
+        /* isSlim= */ true);
+
     return eligibilityAlertSettings;
   }
 

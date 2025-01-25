@@ -28,18 +28,25 @@ public final class EligibilityAlertSettingsCalculator {
   }
 
   /**
-   * Calculates the alert settings for the given request. This method contains a String param
+   * Calculates the alert settings for the given request. This method contains a
+   * String param
    * representing eligibility message.
    *
-   * @param request The HTTP request.
-   * @param isTI True if the request is from a tax advisor.
-   * @param isApplicationEligible True if the application is eligible for the program.
-   * @param isNorthStarEnabled True if NorthStar is enabled.
-   * @param pageHasSupplementalInformation True if the page has supplemental information.
-   * @param programId The program ID.
-   * @param eligibilityMsg The eligibility message.
-   * @param questions The list of applicant questions that the applicant answered that may make the
-   *     applicant ineligible. The list may be empty.
+   * @param request                        The HTTP request.
+   * @param isTI                           True if the request is from a tax
+   *                                       advisor.
+   * @param isApplicationEligible          True if the application is eligible for
+   *                                       the program.
+   * @param isNorthStarEnabled             True if NorthStar is enabled.
+   * @param pageHasSupplementalInformation True if the page has supplemental
+   *                                       information.
+   * @param programId                      The program ID.
+   * @param eligibilityMsg                 The eligibility message.
+   * @param questions                      The list of applicant questions that
+   *                                       the applicant answered that may make
+   *                                       the
+   *                                       applicant ineligible. The list may be
+   *                                       empty.
    * @return The alert settings.
    */
   public AlertSettings calculate(
@@ -65,14 +72,20 @@ public final class EligibilityAlertSettingsCalculator {
   /**
    * Calculates the alert settings for the given request.
    *
-   * @param request The HTTP request.
-   * @param isTI True if the request is from a tax advisor.
-   * @param isApplicationEligible True if the application is eligible for the program.
-   * @param isNorthStarEnabled True if NorthStar is enabled.
-   * @param pageHasSupplementalInformation True if the page has supplemental information.
-   * @param programId The program ID.
-   * @param questions The list of applicant questions that the applicant answered that may make the
-   *     applicant ineligible. The list may be empty.
+   * @param request                        The HTTP request.
+   * @param isTI                           True if the request is from a tax
+   *                                       advisor.
+   * @param isApplicationEligible          True if the application is eligible for
+   *                                       the program.
+   * @param isNorthStarEnabled             True if NorthStar is enabled.
+   * @param pageHasSupplementalInformation True if the page has supplemental
+   *                                       information.
+   * @param programId                      The program ID.
+   * @param questions                      The list of applicant questions that
+   *                                       the applicant answered that may make
+   *                                       the
+   *                                       applicant ineligible. The list may be
+   *                                       empty.
    * @return The alert settings.
    */
   public AlertSettings calculate(
@@ -109,38 +122,36 @@ public final class EligibilityAlertSettingsCalculator {
       return AlertSettings.empty();
     }
 
-    boolean isApplicationFastForwarded =
-        request.flash().get(FlashKey.SHOW_FAST_FORWARDED_MESSAGE).isPresent();
+    boolean isApplicationFastForwarded = request.flash().get(FlashKey.SHOW_FAST_FORWARDED_MESSAGE).isPresent();
 
-    Triple triple =
-        isTI
-            ? getTi(
-                isApplicationFastForwarded,
-                isApplicationEligible,
-                isNorthStarEnabled,
-                pageHasSupplementalInformation)
-            : getApplicant(
-                isApplicationFastForwarded,
-                isApplicationEligible,
-                isNorthStarEnabled,
-                pageHasSupplementalInformation);
+    Triple triple = isTI
+        ? getTi(
+            isApplicationFastForwarded,
+            isApplicationEligible,
+            isNorthStarEnabled,
+            pageHasSupplementalInformation)
+        : getApplicant(
+            isApplicationFastForwarded,
+            isApplicationEligible,
+            isNorthStarEnabled,
+            pageHasSupplementalInformation);
 
-    ImmutableList<String> formattedQuestions =
-        questions.stream()
-            .map(ApplicantQuestion::getQuestionText)
-            .collect(ImmutableList.toImmutableList());
+    ImmutableList<String> formattedQuestions = questions.stream()
+        .map(ApplicantQuestion::getQuestionText)
+        .collect(ImmutableList.toImmutableList());
 
-    String msg =
-        messages.at(triple.textKey.getKeyName())
-            + (eligibilityMsg.isEmpty() ? "" : "\n" + eligibilityMsg);
+    String msg = messages.at(triple.textKey.getKeyName())
+        + (eligibilityMsg.isEmpty() ? "" : "\n" + eligibilityMsg);
 
     return new AlertSettings(
         true,
         Optional.of(messages.at(triple.titleKey.getKeyName())),
-        msg,
+        messages.at(triple.textKey.getKeyName()),
+        false,
         triple.alertType,
         formattedQuestions,
         /* isSlim= */ false);
+    ;
   }
 
   private Triple getTi(
@@ -176,7 +187,8 @@ public final class EligibilityAlertSettingsCalculator {
           MessageKey.ALERT_ELIGIBILITY_TI_NOT_ELIGIBLE_TEXT_SHORT);
     }
 
-    // The default case: isApplicationFastForwarded == false && isApplicationEligible == false
+    // The default case: isApplicationFastForwarded == false &&
+    // isApplicationEligible == false
     return new Triple(
         AlertType.WARNING,
         MessageKey.ALERT_ELIGIBILITY_TI_NOT_ELIGIBLE_TITLE,
@@ -216,17 +228,20 @@ public final class EligibilityAlertSettingsCalculator {
           MessageKey.ALERT_ELIGIBILITY_APPLICANT_NOT_ELIGIBLE_TEXT_SHORT);
     }
 
-    // The default case: isApplicationFastForwarded == false && isApplicationEligible == false
+    // The default case: isApplicationFastForwarded == false &&
+    // isApplicationEligible == false
     return new Triple(
         AlertType.WARNING,
         MessageKey.ALERT_ELIGIBILITY_APPLICANT_NOT_ELIGIBLE_TITLE,
         MessageKey.ALERT_ELIGIBILITY_APPLICANT_NOT_ELIGIBLE_TEXT);
   }
 
-  private record Triple(AlertType alertType, MessageKey titleKey, MessageKey textKey) {}
+  private record Triple(AlertType alertType, MessageKey titleKey, MessageKey textKey) {
+  }
 
   /**
-   * Returns true if eligibility is enabled on the program and it is not a common intake form, false
+   * Returns true if eligibility is enabled on the program and it is not a common
+   * intake form, false
    * otherwise.
    */
   private boolean canShowEligibilitySettings(long programId) {
@@ -235,7 +250,8 @@ public final class EligibilityAlertSettingsCalculator {
 
       return !programDefinition.isCommonIntakeForm() && programDefinition.hasEligibilityEnabled();
     } catch (ProgramNotFoundException ex) {
-      // Checked exceptions are the devil and we've already determined that this program exists by
+      // Checked exceptions are the devil and we've already determined that this
+      // program exists by
       // this point
       throw new RuntimeException("Could not find program.", ex);
     }

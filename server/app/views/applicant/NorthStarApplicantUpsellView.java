@@ -20,92 +20,97 @@ import views.NorthStarBaseView;
 import views.applicant.ProgramCardsSectionParamsFactory.ProgramSectionParams;
 
 public class NorthStarApplicantUpsellView extends NorthStarBaseView {
-  private final ProgramCardsSectionParamsFactory programCardsSectionParamsFactory;
+    private final ProgramCardsSectionParamsFactory programCardsSectionParamsFactory;
 
-  @Inject
-  NorthStarApplicantUpsellView(
-      TemplateEngine templateEngine,
-      ThymeleafModule.PlayThymeleafContextFactory playThymeleafContextFactory,
-      AssetsFinder assetsFinder,
-      ApplicantRoutes applicantRoutes,
-      SettingsManifest settingsManifest,
-      LanguageUtils languageUtils,
-      DeploymentType deploymentType,
-      ProgramCardsSectionParamsFactory programCardsSectionParamsFactory) {
-    super(
-        templateEngine,
-        playThymeleafContextFactory,
-        assetsFinder,
-        applicantRoutes,
-        settingsManifest,
-        languageUtils,
-        deploymentType);
-    this.programCardsSectionParamsFactory = checkNotNull(programCardsSectionParamsFactory);
-  }
+    @Inject
+    NorthStarApplicantUpsellView(
+            TemplateEngine templateEngine,
+            ThymeleafModule.PlayThymeleafContextFactory playThymeleafContextFactory,
+            AssetsFinder assetsFinder,
+            ApplicantRoutes applicantRoutes,
+            SettingsManifest settingsManifest,
+            LanguageUtils languageUtils,
+            DeploymentType deploymentType,
+            ProgramCardsSectionParamsFactory programCardsSectionParamsFactory) {
+        super(
+                templateEngine,
+                playThymeleafContextFactory,
+                assetsFinder,
+                applicantRoutes,
+                settingsManifest,
+                languageUtils,
+                deploymentType);
+        this.programCardsSectionParamsFactory = checkNotNull(programCardsSectionParamsFactory);
+    }
 
-  public String render(UpsellParams params) {
-    ThymeleafModule.PlayThymeleafContext context =
-        createThymeleafContext(
-            params.request(),
-            Optional.of(params.applicantId()),
-            Optional.of(params.profile()),
-            params.applicantPersonalInfo(),
-            params.messages());
+    public String render(UpsellParams params) {
+        ThymeleafModule.PlayThymeleafContext context = createThymeleafContext(
+                params.request(),
+                Optional.of(params.applicantId()),
+                Optional.of(params.profile()),
+                params.applicantPersonalInfo(),
+                params.messages());
 
-    context.setVariable(
-        "pageTitle", params.messages().at(MessageKey.TITLE_APPLICATION_CONFIRMATION.getKeyName()));
+        context.setVariable(
+                "pageTitle", params.messages().at(MessageKey.TITLE_APPLICATION_CONFIRMATION.getKeyName()));
 
-    context.setVariable("programTitle", params.programTitle().orElse(""));
-    context.setVariable("programDescription", params.programDescription().orElse(""));
-    context.setVariable("applicationId", params.applicationId());
-    context.setVariable("bannerMessage", params.bannerMessage());
+        context.setVariable("programTitle", params.programTitle().orElse(""));
+        context.setVariable("programDescription", params.programDescription().orElse(""));
+        context.setVariable("applicationId", params.applicationId());
+        context.setVariable("bannerMessage", params.bannerMessage());
 
-    String alertTitle =
-        params
-            .messages()
-            .at(MessageKey.ALERT_SUBMITTED.getKeyName(), params.programTitle().orElse(""));
-    AlertSettings successAlertSettings =
-        new AlertSettings(/* show= */ true, Optional.of(alertTitle), "", AlertType.SUCCESS);
-    context.setVariable("successAlertSettings", successAlertSettings);
+        ImmutableList<String> additionalText = ImmutableList.of("Text1", "Text2");
 
-    String applicantName =
-        params.profile().getApplicant().join().getAccount().getApplicantDisplayName();
-    context.setVariable("applicantName", applicantName);
+        String alertTitle = params
+                .messages()
+                .at(MessageKey.ALERT_SUBMITTED.getKeyName(), params.programTitle().orElse(""));
+        AlertSettings successAlertSettings = AlertSettings.builder()
+                .show(true)
+                .title(Optional.of("Alert Title"))
+                .text("Alert Text")
+                .unescapedDescription(false)
+                .alertType(AlertType.INFO)
+                .additionalText(additionalText)
+                .isSlim(true)
+                .build();
+                
+        context.setVariable("successAlertSettings", successAlertSettings);
 
-    context.setVariable("dateSubmitted", params.dateSubmitted());
+        String applicantName = params.profile().getApplicant().join().getAccount().getApplicantDisplayName();
+        context.setVariable("applicantName", applicantName);
 
-    Locale locale = params.messages().lang().toLocale();
-    String customConfirmationMessage = params.customConfirmationMessage().getOrDefault(locale);
-    context.setVariable("customConfirmationMessage", customConfirmationMessage);
+        context.setVariable("dateSubmitted", params.dateSubmitted());
 
-    // Info for login modal
-    String applyToProgramsUrl = applicantRoutes.index(params.profile(), params.applicantId()).url();
-    context.setVariable("upsellBypassUrl", applyToProgramsUrl);
-    context.setVariable(
-        "upsellLoginUrl",
-        controllers.routes.LoginController.applicantLogin(Optional.of(applyToProgramsUrl)).url());
+        Locale locale = params.messages().lang().toLocale();
+        String customConfirmationMessage = params.customConfirmationMessage().getOrDefault(locale);
+        context.setVariable("customConfirmationMessage", customConfirmationMessage);
 
-    String downloadHref =
-        routes.UpsellController.download(params.applicationId(), params.applicantId()).url();
-    context.setVariable("downloadHref", downloadHref);
+        // Info for login modal
+        String applyToProgramsUrl = applicantRoutes.index(params.profile(), params.applicantId()).url();
+        context.setVariable("upsellBypassUrl", applyToProgramsUrl);
+        context.setVariable(
+                "upsellLoginUrl",
+                controllers.routes.LoginController.applicantLogin(Optional.of(applyToProgramsUrl)).url());
 
-    // Create account or login alert
-    context.setVariable("createAccountLink", controllers.routes.LoginController.register().url());
+        String downloadHref = routes.UpsellController.download(params.applicationId(), params.applicantId()).url();
+        context.setVariable("downloadHref", downloadHref);
 
-    ProgramSectionParams cardsSection =
-        programCardsSectionParamsFactory.getSection(
-            params.request(),
-            params.messages(),
-            Optional.empty(),
-            MessageKey.BUTTON_VIEW_AND_APPLY,
-            params.eligiblePrograms().get(),
-            /* preferredLocale= */ params.messages().lang().toLocale(),
-            Optional.of(params.profile()),
-            Optional.of(params.applicantId()),
-            params.applicantPersonalInfo(),
-            ProgramCardsSectionParamsFactory.SectionType.STANDARD);
-    context.setVariable("cardsSection", cardsSection);
+        // Create account or login alert
+        context.setVariable("createAccountLink", controllers.routes.LoginController.register().url());
 
-    return templateEngine.process("applicant/ApplicantUpsellTemplate", context);
-  }
+        ProgramSectionParams cardsSection = programCardsSectionParamsFactory.getSection(
+                params.request(),
+                params.messages(),
+                Optional.empty(),
+                MessageKey.BUTTON_VIEW_AND_APPLY,
+                params.eligiblePrograms().get(),
+                /* preferredLocale= */ params.messages().lang().toLocale(),
+                Optional.of(params.profile()),
+                Optional.of(params.applicantId()),
+                params.applicantPersonalInfo(),
+                ProgramCardsSectionParamsFactory.SectionType.STANDARD);
+        context.setVariable("cardsSection", cardsSection);
+
+        return templateEngine.process("applicant/ApplicantUpsellTemplate", context);
+    }
 }
