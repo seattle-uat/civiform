@@ -64,7 +64,6 @@ public class NorthStarApplicantUpsellView extends NorthStarBaseView {
         params
             .messages()
             .at(MessageKey.ALERT_SUBMITTED.getKeyName(), params.programTitle().orElse(""));
-
     AlertSettings successAlertSettings =
         AlertSettings.builder()
             .show(true)

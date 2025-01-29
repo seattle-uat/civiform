@@ -2,7 +2,6 @@ package services;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
-import services.AlertSettings.AlertSettingsBuilder;
 import views.components.TextFormatter;
 
 /**
@@ -31,11 +30,17 @@ public record AlertSettings(
     return new AlertSettingsBuilder();
   }
 
+  /** Sanitized HTML for the alert text that processes Markdown. */
+  public String getFormattedAlertText(String text) {
+    return TextFormatter.formatTextToSanitizedHTML(
+        text, /* preserveEmptyLines= */ false, /* addRequiredIndicator= */ false);
+  }
+
   public static class AlertSettingsBuilder {
     private Boolean show = false;
     private Optional<String> title = Optional.empty();
     private String text = "";
-    private Boolean unescapedDescription = true;
+    private Boolean unescapedDescription = false;
     private AlertType alertType = AlertType.NONE;
     private ImmutableList<String> additionalText = ImmutableList.of();
     private Boolean isSlim = false;
@@ -79,11 +84,5 @@ public record AlertSettings(
       return new AlertSettings(
           show, title, text, unescapedDescription, alertType, additionalText, isSlim);
     }
-  }
-
-  /** Sanitized HTML for the alert text that processes Markdown. */
-  public String getFormattedAlertText(String text) {
-    return TextFormatter.formatTextToSanitizedHTML(
-        text, /* preserveEmptyLines= */ false, /* addRequiredIndicator= */ false);
   }
 }
