@@ -107,14 +107,18 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
 
   private AlertSettings createEligibilityAlertSettings(Messages messages) {
     String alertText = messages.at(MessageKey.ALERT_LIKELY_ELIGIBLE.getKeyName());
+
     AlertSettings eligibilityAlertSettings =
-        new AlertSettings(
-            /* show= */ true,
-            Optional.empty(),
-            alertText,
-            AlertType.INFO,
-            ImmutableList.of(),
-            /* isSlim= */ true);
+        AlertSettings.builder()
+            .show(true)
+            .title(Optional.empty())
+            .text(alertText)
+            .unescapedDescription(false)
+            .alertType(AlertType.INFO)
+            .additionalText(ImmutableList.of())
+            .isSlim(true)
+            .build();
+
     return eligibilityAlertSettings;
   }
 

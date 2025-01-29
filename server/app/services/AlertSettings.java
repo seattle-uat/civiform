@@ -2,6 +2,7 @@ package services;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
+import services.AlertSettings.AlertSettingsBuilder;
 import views.components.TextFormatter;
 
 /**
@@ -23,21 +24,61 @@ public record AlertSettings(
     Boolean isSlim) {
 
   public static AlertSettings empty() {
-    return new AlertSettings(false, Optional.empty(), "", AlertType.NONE);
+    return AlertSettings.builder().build();
   }
 
-  public AlertSettings(Boolean show, Optional<String> title, String text, AlertType alertType) {
-    this(show, title, text, alertType, ImmutableList.of(), /* isSlim= */ false);
+  public static AlertSettingsBuilder builder() {
+    return new AlertSettingsBuilder();
   }
 
-  public AlertSettings(
-      Boolean show,
-      Optional<String> title,
-      String text,
-      AlertType alertType,
-      ImmutableList<String> additionalText,
-      Boolean isSlim) {
-    this(show, title, text, /* unescapedDescription= */ true, alertType, additionalText, isSlim);
+  public static class AlertSettingsBuilder {
+    private Boolean show = false;
+    private Optional<String> title = Optional.empty();
+    private String text = "";
+    private Boolean unescapedDescription = true;
+    private AlertType alertType = AlertType.NONE;
+    private ImmutableList<String> additionalText = ImmutableList.of();
+    private Boolean isSlim = false;
+
+    public AlertSettingsBuilder show(Boolean show) {
+      this.show = show;
+      return this;
+    }
+
+    public AlertSettingsBuilder title(Optional<String> title) {
+      this.title = title;
+      return this;
+    }
+
+    public AlertSettingsBuilder text(String text) {
+      this.text = text;
+      return this;
+    }
+
+    public AlertSettingsBuilder unescapedDescription(Boolean unescapedDescription) {
+      this.unescapedDescription = unescapedDescription;
+      return this;
+    }
+
+    public AlertSettingsBuilder alertType(AlertType alertType) {
+      this.alertType = alertType;
+      return this;
+    }
+
+    public AlertSettingsBuilder additionalText(ImmutableList<String> additionalText) {
+      this.additionalText = additionalText;
+      return this;
+    }
+
+    public AlertSettingsBuilder isSlim(Boolean isSlim) {
+      this.isSlim = isSlim;
+      return this;
+    }
+
+    public AlertSettings build() {
+      return new AlertSettings(
+          show, title, text, unescapedDescription, alertType, additionalText, isSlim);
+    }
   }
 
   /** Sanitized HTML for the alert text that processes Markdown. */
