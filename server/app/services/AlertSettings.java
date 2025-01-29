@@ -36,7 +36,8 @@ public record AlertSettings(
         text, /* preserveEmptyLines= */ false, /* addRequiredIndicator= */ false);
   }
 
-  public static class AlertSettingsBuilder {
+  // Add the "final" keyword to the class declaration
+  public static final class AlertSettingsBuilder {
     private Boolean show = false;
     private Optional<String> title = Optional.empty();
     private String text = "";
