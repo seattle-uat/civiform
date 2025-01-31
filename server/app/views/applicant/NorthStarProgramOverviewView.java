@@ -1,7 +1,6 @@
 package views.applicant;
 
 import auth.CiviFormProfile;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import controllers.AssetsFinder;
@@ -115,7 +114,6 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
             .text(alertText)
             .unescapedDescription(true)
             .alertType(AlertType.INFO)
-            .additionalText(ImmutableList.of())
             .isSlim(true)
             .build();
 

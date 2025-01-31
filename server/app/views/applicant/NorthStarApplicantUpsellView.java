@@ -68,7 +68,7 @@ public class NorthStarApplicantUpsellView extends NorthStarBaseView {
         AlertSettings.builder()
             .show(true)
             .title(Optional.of(alertTitle))
-            .text("Alert Text")
+            .text("")
             .unescapedDescription(true)
             .alertType(AlertType.SUCCESS)
             .isSlim(true)
