@@ -112,7 +112,6 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
             .show(true)
             .title(Optional.empty())
             .text(alertText)
-            .unescapedDescription(true)
             .alertType(AlertType.INFO)
             .isSlim(true)
             .build();

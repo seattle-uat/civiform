@@ -138,7 +138,6 @@ public final class EligibilityAlertSettingsCalculator {
         .show(true)
         .title(Optional.of(messages.at(triple.titleKey.getKeyName())))
         .text(msg)
-        .unescapedDescription(true)
         .alertType(triple.alertType)
         .additionalText(formattedQuestions)
         .isSlim(false)

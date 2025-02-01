@@ -89,7 +89,6 @@ public class NorthStarAddressCorrectionBlockView extends NorthStarBaseView {
                 Optional.of(
                     params.messages().at(MessageKey.ADDRESS_CORRECTION_LINE_1.getKeyName())))
             .text(alertMessage)
-            .unescapedDescription(true)
             .alertType(AlertType.WARNING)
             .build();
     context.setVariable("addressAlertSettings", addressAlertSettings);

@@ -40,7 +40,7 @@ public record AlertSettings(
     private Boolean show = false;
     private Optional<String> title = Optional.empty();
     private String text = "";
-    private Boolean unescapedDescription = false;
+    private Boolean unescapedDescription = true;
     private AlertType alertType = AlertType.NONE;
     private ImmutableList<String> additionalText = ImmutableList.of();
     private Boolean isSlim = false;
