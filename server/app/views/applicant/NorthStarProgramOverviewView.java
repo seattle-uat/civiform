@@ -149,7 +149,6 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
             .title(Optional.empty())
             .text(alertText)
             .alertType(alertType)
-            .additionalText(ImmutableList.of())
             .isSlim(true)
             .build();
     return eligibilityAlertSettings;
