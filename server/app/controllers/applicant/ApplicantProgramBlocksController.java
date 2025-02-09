@@ -10,7 +10,6 @@ import static views.questiontypes.ApplicantQuestionRendererParams.ErrorDisplayMo
 import static views.questiontypes.ApplicantQuestionRendererParams.ErrorDisplayMode.DISPLAY_ERRORS_WITH_MODAL_PREVIOUS;
 import static views.questiontypes.ApplicantQuestionRendererParams.ErrorDisplayMode.DISPLAY_ERRORS_WITH_MODAL_REVIEW;
 
-import actions.RouteExtractor;
 import auth.CiviFormProfile;
 import auth.ProfileUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -36,7 +35,6 @@ import play.data.DynamicForm;
 import play.data.FormFactory;
 import play.i18n.MessagesApi;
 import play.libs.concurrent.ClassLoaderExecutionContext;
-import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Result;
@@ -385,7 +383,8 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
         .thenApplyAsync(
             (v) -> {
               Optional<Result> applicationUpdatedOptional =
-                  updateApplicationToLatestProgramVersionIfNeeded(applicantId, programId, request);
+                  updateApplicationToLatestProgramVersionIfNeeded(
+                      request, applicantId, programId, profile);
               if (applicationUpdatedOptional.isPresent()) {
                 return applicationUpdatedOptional.get();
               }
@@ -478,8 +477,11 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
             classLoaderExecutionContext.current())
         .thenApplyAsync(
             (roApplicantProgramService) -> {
+              CiviFormProfile profile = profileUtils.currentUserProfile(request);
+
               Optional<Result> applicationUpdatedOptional =
-                  updateApplicationToLatestProgramVersionIfNeeded(applicantId, programId, request);
+                  updateApplicationToLatestProgramVersionIfNeeded(
+                      request, applicantId, programId, profile);
               if (applicationUpdatedOptional.isPresent()) {
                 return applicationUpdatedOptional.get();
               }
@@ -488,7 +490,6 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
 
               if (block.isPresent()) {
                 ApplicantPersonalInfo personalInfo = applicantStage.toCompletableFuture().join();
-                CiviFormProfile profile = profileUtils.currentUserProfile(request);
                 ApplicationBaseViewParams applicationParams =
                     applicationBaseViewParamsBuilder(
                             request,
@@ -591,36 +592,15 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
                   new ImmutableMap.Builder<>();
               Optional<ImmutableList<String>> keysOptional =
                   fileUploadQuestion.getFileKeyListValue();
-              Optional<ImmutableList<String>> originalFileNamesOptional =
-                  fileUploadQuestion.getOriginalFileNameListValue();
-
-              int fileKeyIndexRemoved = -1;
 
               if (keysOptional.isPresent()) {
                 ImmutableList<String> keys = keysOptional.get();
                 // Write all existing keys back to the form data, except the one we want to delete.
                 for (int i = 0; i < keys.size(); i++) {
                   String keyValue = keys.get(i);
-                  boolean removeKey = false;
-                  if (keyValue.equals(fileKeyToRemove)) {
-                    removeKey = true;
-                    fileKeyIndexRemoved = i;
-                  }
                   fileUploadQuestionFormData.put(
                       fileUploadQuestion.getFileKeyListPathForIndex(i).toString(),
-                      removeKey ? "" : keyValue);
-                }
-              }
-
-              if (originalFileNamesOptional.isPresent() && (fileKeyIndexRemoved >= 0)) {
-                // Write all existing original file names back to the form data, except the one
-                // that was removed from the file keys list.
-                ImmutableList<String> originalFileNames = originalFileNamesOptional.get();
-                for (int i = 0; i < originalFileNames.size(); i++) {
-                  String originalFileNameValue = originalFileNames.get(i);
-                  fileUploadQuestionFormData.put(
-                      fileUploadQuestion.getOriginalFileNameListPathForIndex(i).toString(),
-                      i == fileKeyIndexRemoved ? "" : originalFileNameValue);
+                      !keyValue.equals(fileKeyToRemove) ? keyValue : "");
                 }
               }
 
@@ -707,14 +687,6 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
               Optional<String> bucket = request.queryString("bucket");
               Optional<String> key = request.queryString("key");
 
-              // Original file name is only set for Azure, where we have to generate a UUID when
-              // uploading a file to Azure Blob storage because we cannot upload a file without a
-              // name. For AWS, the file key and original file name are the same. For the future,
-              // GCS supports POST uploads so this field won't be needed either:
-              // <link> https://cloud.google.com/storage/docs/xml-api/post-object-forms </link>
-              // This is only really needed for Azure blob storage.
-              Optional<String> originalFileName = request.queryString("originalFileName");
-
               if (bucket.isEmpty() || key.isEmpty()) {
                 return failedFuture(
                     new IllegalArgumentException("missing file key and bucket names"));
@@ -731,8 +703,6 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
                   new ImmutableMap.Builder<>();
               Optional<ImmutableList<String>> keysOptional =
                   fileUploadQuestion.getFileKeyListValue();
-              Optional<ImmutableList<String>> originalFileNamesOptional =
-                  fileUploadQuestion.getOriginalFileNameListValue();
 
               if (keysOptional.isPresent()) {
                 ImmutableList<String> keys = keysOptional.get();
@@ -779,40 +749,7 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
                     fileUploadQuestion.getFileKeyListPathForIndex(0).toString(), key.get());
               }
 
-              // Original file names are only set for Azure deployments, when the form contains
-              // the original file name field. The value will be stored in the file record.
-              if (originalFileName.isPresent()) {
-                // If there are no originalFileNames in the question data, we don't need to append.
-                if (originalFileNamesOptional.isPresent()) {
-                  ImmutableList<String> orignalFileNames = originalFileNamesOptional.get();
-
-                  // Write the existing filenames so that we don't delete any.
-                  for (int i = 0; i < orignalFileNames.size(); i++) {
-                    String originalFileNameValue = orignalFileNames.get(i);
-                    fileUploadQuestionFormData.put(
-                        fileUploadQuestion.getOriginalFileNameListPathForIndex(i).toString(),
-                        originalFileNameValue);
-                    // We do not need to check if this original file name already exists.
-                    // Original file names are stored in the record and not used to reference the
-                    // file in storage, so collisions in the names do not affect the application.
-                    //
-                    // The actual file key is a UID in this case, and we've already checked for
-                    // key collisions above.
-                  }
-
-                  fileUploadQuestionFormData.put(
-                      fileUploadQuestion
-                          .getOriginalFileNameListPathForIndex(orignalFileNames.size())
-                          .toString(),
-                      originalFileName.get());
-                } else {
-                  fileUploadQuestionFormData.put(
-                      fileUploadQuestion.getOriginalFileNameListPathForIndex(0).toString(),
-                      originalFileName.get());
-                }
-              }
-
-              return ensureFileRecord(key.get(), originalFileName)
+              return ensureFileRecord(key.get(), Optional.empty())
                   .thenComposeAsync(
                       (StoredFileModel unused) ->
                           applicantService.stageAndUpdateIfValid(
@@ -1037,8 +974,11 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
             formDataCompletableFuture, applicantProgramServiceCompletableFuture)
         .thenComposeAsync(
             (v) -> {
+              CiviFormProfile profile = profileUtils.currentUserProfile(request);
+
               Optional<Result> applicationUpdatedOptional =
-                  updateApplicationToLatestProgramVersionIfNeeded(applicantId, programId, request);
+                  updateApplicationToLatestProgramVersionIfNeeded(
+                      request, applicantId, programId, profile);
               if (applicationUpdatedOptional.isPresent()) {
                 return CompletableFuture.completedFuture(applicationUpdatedOptional.get());
               }
@@ -1046,7 +986,6 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
               ImmutableMap<String, String> formData = formDataCompletableFuture.join();
               ReadOnlyApplicantProgramService readOnlyApplicantProgramService =
                   applicantProgramServiceCompletableFuture.join();
-              CiviFormProfile profile = profileUtils.currentUserProfile(request);
               Optional<Block> optionalBlockBeforeUpdate =
                   readOnlyApplicantProgramService.getActiveBlock(blockId);
               ApplicantRequestedAction applicantRequestedAction =
@@ -1582,28 +1521,17 @@ public final class ApplicantProgramBlocksController extends CiviFormController {
    *
    * @return {@link Result} if application was updated; empty if not
    */
-  private Optional<Result> updateApplicationToLatestProgramVersionIfNeeded(
-      long applicantId, long programId, Request request) {
-    if (settingsManifest.getFastforwardEnabled(request)) {
-      Optional<Long> latestProgramId =
-          applicantService.updateApplicationToLatestProgramVersion(applicantId, programId);
-
-      RouteExtractor routeExtractor = new RouteExtractor(request);
-
-      if (latestProgramId.isPresent()) {
-        Call redirectLocation =
-            routeExtractor.containsKey("applicantId")
-                ? controllers.applicant.routes.ApplicantProgramReviewController
-                    .reviewWithApplicantId(applicantId, latestProgramId.get())
-                : controllers.applicant.routes.ApplicantProgramReviewController.review(
-                    latestProgramId.get());
-
-        return Optional.of(
-            redirect(redirectLocation.url())
-                .flashing(FlashKey.SHOW_FAST_FORWARDED_MESSAGE, "true"));
-      }
+  public Optional<Result> updateApplicationToLatestProgramVersionIfNeeded(
+      Http.Request request, long applicantId, long programId, CiviFormProfile profile) {
+    if (!settingsManifest.getFastforwardEnabled(request)) {
+      return Optional.empty();
     }
 
-    return Optional.empty();
+    return applicantService
+        .updateApplicationToLatestProgramVersion(applicantId, programId)
+        .map(
+            latestProgramId ->
+                redirect(applicantRoutes.review(profile, applicantId, latestProgramId).url())
+                    .flashing(FlashKey.SHOW_FAST_FORWARDED_MESSAGE, "true"));
   }
 }
