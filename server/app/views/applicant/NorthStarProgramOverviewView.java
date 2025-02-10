@@ -1,7 +1,6 @@
 package views.applicant;
 
 import auth.CiviFormProfile;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import controllers.AssetsFinder;
@@ -145,13 +144,13 @@ public class NorthStarProgramOverviewView extends NorthStarBaseView {
     }
 
     AlertSettings eligibilityAlertSettings =
-        new AlertSettings(
-            /* show= */ true,
-            Optional.empty(),
-            alertText,
-            alertType,
-            ImmutableList.of(),
-            /* isSlim= */ true);
+        AlertSettings.builder()
+            .show(true)
+            .title(Optional.empty())
+            .text(alertText)
+            .alertType(alertType)
+            .isSlim(true)
+            .build();
     return eligibilityAlertSettings;
   }
 

@@ -32,7 +32,7 @@ public final class EligibilityAlertSettingsCalculator {
    * representing eligibility message.
    *
    * @param request The HTTP request.
-   * @param isTI True if the request is from a tax advisor.
+   * @param isTI True if the request is from a trusted intermediary
    * @param isApplicationEligible True if the application is eligible for the program.
    * @param isNorthStarEnabled True if NorthStar is enabled.
    * @param pageHasSupplementalInformation True if the page has supplemental information.
@@ -134,13 +134,14 @@ public final class EligibilityAlertSettingsCalculator {
         messages.at(triple.textKey.getKeyName())
             + (eligibilityMsg.isEmpty() ? "" : "\n" + eligibilityMsg);
 
-    return new AlertSettings(
-        true,
-        Optional.of(messages.at(triple.titleKey.getKeyName())),
-        msg,
-        triple.alertType,
-        formattedQuestions,
-        /* isSlim= */ false);
+    return AlertSettings.builder()
+        .show(true)
+        .title(Optional.of(messages.at(triple.titleKey.getKeyName())))
+        .text(msg)
+        .alertType(triple.alertType)
+        .additionalText(formattedQuestions)
+        .isSlim(false)
+        .build();
   }
 
   private Triple getTi(
@@ -176,7 +177,8 @@ public final class EligibilityAlertSettingsCalculator {
           MessageKey.ALERT_ELIGIBILITY_TI_NOT_ELIGIBLE_TEXT_SHORT);
     }
 
-    // The default case: isApplicationFastForwarded == false && isApplicationEligible == false
+    // The default case: isApplicationFastForwarded == false &&
+    // isApplicationEligible == false
     return new Triple(
         AlertType.WARNING,
         MessageKey.ALERT_ELIGIBILITY_TI_NOT_ELIGIBLE_TITLE,
@@ -216,7 +218,8 @@ public final class EligibilityAlertSettingsCalculator {
           MessageKey.ALERT_ELIGIBILITY_APPLICANT_NOT_ELIGIBLE_TEXT_SHORT);
     }
 
-    // The default case: isApplicationFastForwarded == false && isApplicationEligible == false
+    // The default case: isApplicationFastForwarded == false &&
+    // isApplicationEligible == false
     return new Triple(
         AlertType.WARNING,
         MessageKey.ALERT_ELIGIBILITY_APPLICANT_NOT_ELIGIBLE_TITLE,
@@ -235,8 +238,9 @@ public final class EligibilityAlertSettingsCalculator {
 
       return !programDefinition.isCommonIntakeForm() && programDefinition.hasEligibilityEnabled();
     } catch (ProgramNotFoundException ex) {
-      // Checked exceptions are the devil and we've already determined that this program exists by
-      // this point
+      // Checked exceptions are the devil and we've already determined that this
+      // program exists by this point
+
       throw new RuntimeException("Could not find program.", ex);
     }
   }

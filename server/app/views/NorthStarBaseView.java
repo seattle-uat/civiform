@@ -225,14 +225,16 @@ public abstract class NorthStarBaseView {
     }
 
     AlertSettings notProductionAlertSettings =
-        new AlertSettings(
-            true,
-            Optional.of(messages.at(MessageKey.NOT_FOR_PRODUCTION_BANNER_LINE_1.getKeyName())),
-            unescapedDescription.orElse(""),
-            unescapedDescription.isPresent(),
-            AlertType.EMERGENCY,
-            ImmutableList.of(),
-            /* isSlim= */ false);
+        AlertSettings.builder()
+            .show(true)
+            .title(
+                Optional.of(messages.at(MessageKey.NOT_FOR_PRODUCTION_BANNER_LINE_1.getKeyName())))
+            .text(unescapedDescription.orElse(""))
+            .unescapedDescription(unescapedDescription.isPresent())
+            .alertType(AlertType.EMERGENCY)
+            .additionalText(ImmutableList.of())
+            .isSlim(false)
+            .build();
     context.setVariable("notProductionAlertSettings", notProductionAlertSettings);
   }
 
