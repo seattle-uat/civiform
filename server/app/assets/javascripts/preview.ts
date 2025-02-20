@@ -247,7 +247,7 @@ export default class PreviewController {
       contentElement.classList.add('pr-16')
       const paragraph = contentElement.querySelector('p')
       if (paragraph) {
-        paragraph.classList.add('break-words', 'break-all')
+        paragraph.classList.add('break-all')
       }
 
       const contentParent = document.querySelector(
